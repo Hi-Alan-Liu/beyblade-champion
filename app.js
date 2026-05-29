@@ -1,4 +1,4 @@
-/* 陀螺配置卡片產生器 — 純前端，無後端、無 DB */
+/* 陀螺配置卡片產生器 — 純前端、無後端；圖庫資料走本機 bundle（BeyDB） */
 
 // ===== 名次設定 =====
 const RANKS = {
@@ -267,20 +267,42 @@ const STORAGE_KEY = "beyblade-card-v1";
 let cards = [];     // 每張卡的完整資料
 let active = 0;     // 目前編輯的卡 index
 
+// 部件資料形狀（v3）：在原本 {name,img} 之上，新增圖庫選取的中繼資料。
+//   source: "gallery"（從圖庫選）| "upload"（自訂上傳）| ""（未填）
+//   key:    圖庫的 DB key（例 "DrSt" / "7-70" / "L"），自訂上傳為 ""
+//   group:  系統別 BX/UX/CX（圖庫帶入），自訂上傳為 ""
+// 舊卡片只有 {name,img} 也能載入（normalizePart 會補齊欄位），不會壞資料。
+function blankPart() {
+  return { source: "", key: "", group: "", name: "", img: "" };
+}
+function normalizePart(p) {
+  p = p || {};
+  return {
+    source: p.source || (p.img ? "upload" : ""), // 舊資料有圖必為自訂上傳
+    key: p.key || "",
+    group: p.group || "",
+    name: p.name || "",
+    img: p.img || "",
+  };
+}
+
 function blankCard(rank) {
   return {
     title: "", rank: rank || "1", size: "ig", shape: "full",
     logo: "HANIK TRACK", nick: "", watermark: "高雄漢諡",
     person: "", bg: "",
     beys: [0, 1, 2].map(() => ({
-      blade: { name: "", img: "" }, ratchet: { name: "", img: "" }, bit: { name: "", img: "" },
+      blade: blankPart(), ratchet: blankPart(), bit: blankPart(),
     })),
   };
 }
 
 // 從畫面讀出目前卡片資料（不含 title）
+// 名稱/圖片來自 DOM；圖庫中繼資料(source/key/group)畫面上不存放，
+// 故從現有 in-memory 卡片沿用，避免存檔時把圖庫選取資訊抹掉。
 function readCardFromDOM() {
   const parts = ["blade", "ratchet", "bit"];
+  const prev = cards[active] || blankCard();
   return {
     rank: $("rankSelect").value,
     size: $("sizeSelect").value,
@@ -292,7 +314,18 @@ function readCardFromDOM() {
     bg: $("panelBg").style.backgroundImage || "",
     beys: [0, 1, 2].map((i) => {
       const o = {};
-      parts.forEach((p) => { o[p] = { name: nameInput(i, p)?.value || "", img: imgSrc(i, p) }; });
+      const prevBey = (prev.beys && prev.beys[i]) || {};
+      parts.forEach((p) => {
+        const meta = normalizePart(prevBey[p]);
+        const img = imgSrc(i, p);
+        o[p] = {
+          source: meta.source || (img ? "upload" : ""),
+          key: meta.key,
+          group: meta.group,
+          name: nameInput(i, p)?.value || "",
+          img,
+        };
+      });
       return o;
     }),
   };
@@ -323,10 +356,23 @@ function loadCardToDOM(c) {
   applyRank(); applySize(); applyShape();
 }
 
+// 把一張卡的部件補齊 v3 欄位（舊資料相容）
+function normalizeCard(c) {
+  c = c || blankCard();
+  const parts = ["blade", "ratchet", "bit"];
+  c.beys = (c.beys || []).map((b) => {
+    const o = {};
+    parts.forEach((p) => { o[p] = normalizePart(b && b[p]); });
+    return o;
+  });
+  while (c.beys.length < BEY_COUNT) c.beys.push({ blade: blankPart(), ratchet: blankPart(), bit: blankPart() });
+  return c;
+}
+
 function saveState() {
   try {
     if (cards.length) cards[active] = { ...cards[active], ...readCardFromDOM() };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: 2, active, cards }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: 3, active, cards }));
   } catch (e) {
     console.warn("暫存失敗（可能超出容量）：", e.message);
   }
@@ -336,13 +382,14 @@ function restoreState() {
   let snap;
   try { snap = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return false; }
   if (!snap) return false;
-  if (snap.v === 2 && Array.isArray(snap.cards)) {
+  if ((snap.v === 2 || snap.v === 3) && Array.isArray(snap.cards)) {
     cards = snap.cards.length ? snap.cards : [blankCard()];
     active = Math.min(Math.max(snap.active || 0, 0), cards.length - 1);
   } else {
     cards = [{ ...blankCard(), ...snap }];   // v1 單卡格式 → 包成一張
     active = 0;
   }
+  cards = cards.map(normalizeCard);          // 補齊新欄位，舊資料不會壞
   loadCardToDOM(cards[active]);
   renderTabs();
   return true;

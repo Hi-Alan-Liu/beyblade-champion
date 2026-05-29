@@ -28,4 +28,8 @@ node_modules/
 *.jpeg
 !範例*.png
 
+# 圖庫（從 x 專案搬移）為離線選圖必要內容，務必入庫（覆蓋上面的 *.png 忽略）
+!assets/img/
+!assets/img/**
+
 # 注意：vendor/html-to-image.js 為離線必要檔，務必入庫（不忽略）
