@@ -74,19 +74,12 @@ function buildBeyControls() {
     const row = document.createElement("div");
     row.className = "bey-row";
     row.innerHTML = `
-      <div class="bey-assembly" id="asm-${i}">
-        <div class="asm-layer asm-blade" id="comp-${i}-blade"></div>
-        <img class="asm-layer asm-ratchet" id="comp-${i}-ratchet" alt="" />
-        <img class="asm-layer asm-bit"     id="comp-${i}-bit"     alt="" />
-      </div>
-      <div class="bey-parts">
-        ${PART_DEFS.map(
-          (p) => `<div class="part part-${p.key}" id="part-${i}-${p.key}">
-            <img id="img-${i}-${p.key}" alt="" />
-            <span class="ph" id="ph-${i}-${p.key}">${p.label}</span>
-          </div>`
-        ).join("")}
-      </div>
+      ${PART_DEFS.map(
+        (p) => `<div class="part part-${p.key}" id="part-${i}-${p.key}">
+          <img id="img-${i}-${p.key}" alt="" />
+          <span class="ph" id="ph-${i}-${p.key}">${p.label}</span>
+        </div>`
+      ).join("")}
       <div class="bey-name" id="name-${i}"></div>
     `;
     rows.appendChild(row);
@@ -117,7 +110,10 @@ function createGalleryModal() {
         <label class="modal-upload">⬆ 自訂上傳
           <input type="file" accept="image/*" id="galUpload" hidden />
         </label>
-        <button type="button" class="modal-clear" id="galClear">清除此格</button>
+        <div class="modal-foot-right">
+          <button type="button" class="modal-clear" id="galClear">清除此格</button>
+          <button type="button" class="modal-apply" id="galApply" hidden>套用至卡片</button>
+        </div>
       </div>
     </div>`;
   document.body.appendChild(m);
@@ -132,7 +128,10 @@ function createGalleryModal() {
     if (key) pickGalleryEntry(BeyDB.get(galTarget.part, key));
   });
   $("galUpload").addEventListener("change", onGalleryUpload);
-  $("galClear").addEventListener("click", () => { clearSlot(galTarget.bey, galTarget.part); closeGallery(); });
+  $("galClear").addEventListener("click", () => {
+    if (confirm("確定清除此格的零件？")) { clearSlot(galTarget.bey, galTarget.part); closeGallery(); }
+  });
+  $("galApply").addEventListener("click", applyCxDraft);
 }
 
 function partLabel(part) {
@@ -197,13 +196,15 @@ function closeGallery() { $("galleryModal").classList.add("hidden"); }
 function renderGalleryGrid() {
   const grid = $("galGrid");
   grid.classList.remove("cx-mode");
-  // CX 拆解：走子部件組裝流程
+  // CX 拆解：走子部件組裝流程（套用按鈕只在 CX 模式顯示，位於清除此格右邊）
   if (galTarget.part === "blade" && galTarget.system === "CX") {
     $("galSearch").style.display = "none";
     $("galSelect").hidden = true;
+    $("galApply").hidden = false;
     renderCxBuilder();
     return;
   }
+  $("galApply").hidden = true;
   $("galSearch").style.display = "";
   const q = $("galSearch").value;
   let items = BeyDB.search(galTarget.part, q);
@@ -262,13 +263,13 @@ function renderCxBuilder() {
   // CX 子部件中文標籤（對齊 beybladehub 與使用者用語：Main Blade=鋼鐵戰刃）
   const CX_LABEL = { chip: "紋章鎖", main: "主刃／鋼鐵戰刃", assist: "輔助戰刃", metal: "金屬刃", over: "超越刃" };
   const compName = (c) => CX_LABEL[c] || c;
-  const comps = BeyDB.cxComponents(cxDraft.mode);
+  // 依使用者指定的堆放順序排列子部件選取區：紋章鎖 → 超越刃 → 金屬刃 →（主刃）→ 輔助戰刃
+  const comps = BeyDB.cxComponents(cxDraft.mode).slice().sort((a, b) => CX_STACK_ORDER.indexOf(a) - CX_STACK_ORDER.indexOf(b));
   grid.innerHTML = `
     <div class="cx-modebar">
       <span>組合方式：</span>
       <button type="button" class="cx-mode-btn ${cxDraft.mode === 3 ? "active" : ""}" data-mode="3">3 件</button>
       <button type="button" class="cx-mode-btn ${cxDraft.mode === 4 ? "active" : ""}" data-mode="4">4 件</button>
-      <button type="button" class="cx-apply" id="cxApply">套用至卡片</button>
     </div>
     ${comps
       .map((c) => {
@@ -296,7 +297,6 @@ function renderCxBuilder() {
   grid.querySelectorAll(".cx-opt").forEach((b) =>
     b.addEventListener("click", () => { cxDraft.comps[b.dataset.comp] = BeyDB.cxGet(b.dataset.comp, b.dataset.key); renderCxBuilder(); })
   );
-  $("cxApply").addEventListener("click", applyCxDraft);
 }
 
 function applyCxDraft() {
@@ -307,9 +307,8 @@ function applyCxDraft() {
     if (e) chosen[c] = { key: e.key, img: e.img, name: e.name };
   });
   if (!Object.keys(chosen).length) { alert("請至少選一個 CX 子部件"); return; }
-  const comp = BeyDB.cxComposition();
-  const delim = (comp && comp.delim) || ".";
-  const name = comps.filter((c) => chosen[c]).map((c) => chosen[c].name).join(delim);
+  // 組裝名稱：無分隔符直接串接；輔助戰刃只取代碼(單字母，如 Heavy→H)
+  const name = comps.filter((c) => chosen[c]).map((c) => (c === "assist" ? chosen[c].key : chosen[c].name)).join("");
   setPartData(galTarget.bey, "blade", {
     source: "gallery", cx: true, mode: cxDraft.mode, comps: chosen, name, group: "CX", key: "", img: "",
   });
@@ -459,18 +458,13 @@ function setImg(imgEl, phEl, dataUrl) {
   }
 }
 
-// 固鎖/軸心：同步更新右側分開零件 + 左側組裝合成層（皆為單一 <img>）
+// 固鎖/軸心：單一 <img> 直接放在部件格
 function setPartImage(i, part, dataUrl) {
-  setImg($(`img-${i}-${part}`), $(`ph-${i}-${part}`), dataUrl); // 右側分開（空時顯示提示框）
-  const comp = $(`comp-${i}-${part}`);                          // 左側組裝層（空時整層隱藏，不留洞）
-  if (comp) {
-    if (dataUrl) { comp.src = dataUrl; comp.style.display = "block"; }
-    else { comp.removeAttribute("src"); comp.style.display = "none"; }
-  }
+  setImg($(`img-${i}-${part}`), $(`ph-${i}-${part}`), dataUrl);
 }
 
-// CX 子部件由上而下的堆疊順序
-const CX_STACK_ORDER = ["chip", "metal", "main", "over", "assist"];
+// CX 子部件由上而下的堆疊順序：紋章鎖 → 超越刃 → 金屬刃 →（主刃）→ 輔助戰刃
+const CX_STACK_ORDER = ["chip", "over", "metal", "main", "assist"];
 function cxOrderedComps(d) {
   return CX_STACK_ORDER
     .filter((c) => d.comps && d.comps[c] && d.comps[c].img)
@@ -482,33 +476,20 @@ function cxThumbImg(d) {
          (cxOrderedComps(d)[0] && cxOrderedComps(d)[0].img) || "";
 }
 
-// 上蓋渲染：一般 = 單圖；CX = 子部件多層堆疊（組裝層 + 右側格皆然）
+// 上蓋渲染：一般 = 單圖；CX = 子部件在上蓋格內多層堆疊組成一個上蓋
 function renderBlade(i, d) {
-  const asm = $(`comp-${i}-blade`);    // 組裝層容器(div)
-  const cell = $(`part-${i}-blade`);   // 右側格(div)
+  const cell = $(`part-${i}-blade`);   // 上蓋格(div)
   const cellImg = $(`img-${i}-blade`);
   const cellPh = $(`ph-${i}-blade`);
-  if (!asm || !cell) return;
-  // 清掉先前注入的 CX 子圖
-  asm.querySelectorAll(".cx-sub").forEach((n) => n.remove());
-  cell.querySelectorAll(".cx-stack").forEach((n) => n.remove());
+  if (!cell) return;
+  cell.querySelectorAll(".cx-stack").forEach((n) => n.remove()); // 清掉舊 CX 堆疊
 
   if (d && d.cx) {
     if (cellImg) cellImg.style.display = "none";
     if (cellPh) cellPh.style.display = "none";
-    const comps = cxOrderedComps(d);
-    // 組裝層：子圖直接疊在 blade 區域
-    asm.style.display = comps.length ? "block" : "none";
-    comps.forEach((c) => {
-      const im = document.createElement("img");
-      im.className = "cx-sub cx-" + c.component;
-      im.src = c.img;
-      asm.appendChild(im);
-    });
-    // 右側格：迷你堆疊
     const stack = document.createElement("div");
     stack.className = "cx-stack";
-    comps.forEach((c) => {
+    cxOrderedComps(d).forEach((c) => {
       const im = document.createElement("img");
       im.className = "cx-sub cx-" + c.component;
       im.src = c.img;
@@ -516,11 +497,6 @@ function renderBlade(i, d) {
     });
     cell.appendChild(stack);
   } else {
-    // 一般上蓋：組裝層放單一 img；右側格用既有 img/ph
-    let aimg = asm.querySelector("img.asm-single");
-    if (!aimg) { aimg = document.createElement("img"); aimg.className = "asm-single"; asm.appendChild(aimg); }
-    if (d && d.img) { aimg.src = d.img; aimg.style.display = "block"; asm.style.display = "block"; }
-    else { aimg.removeAttribute("src"); aimg.style.display = "none"; asm.style.display = "none"; }
     setImg(cellImg, cellPh, (d && d.img) || "");
   }
 }
@@ -531,39 +507,6 @@ function renderPart(i, part) {
   if (part === "blade") renderBlade(i, d);
   else setPartImage(i, part, d.img);
   renderSlot(i, part);
-  layoutAssembly(i); // 依現有層動態排版，空層自動跳過、上下接合不留洞
-}
-
-// 某部件是否有可顯示的圖（CX 上蓋看是否有子部件圖）
-function hasPartImage(i, part) {
-  const d = state.beys[i] && state.beys[i][part];
-  if (!d) return false;
-  if (part === "blade" && d.cx) return cxOrderedComps(d).length > 0;
-  return !!d.img;
-}
-
-// 組裝合成的動態排版：只排有圖的層，依序堆疊重疊並整體垂直置中。
-// 解決「合體型(fused)留空固鎖/軸心」或任一層留空時的空洞問題。
-const ASM_H = { blade: 0.52, ratchet: 0.36, bit: 0.36 }; // 各層高度（佔組裝區比例）
-const ASM_OVERLAP = 0.13;                                 // 相鄰層重疊量
-function layoutAssembly(i) {
-  const order = ["blade", "ratchet", "bit"];
-  const present = order.filter((p) => hasPartImage(i, p));
-  let total = 0;
-  present.forEach((p, idx) => { total += ASM_H[p]; if (idx > 0) total -= ASM_OVERLAP; });
-  let cursor = Math.max(0, (1 - total) / 2); // 整體垂直置中
-  present.forEach((p) => {
-    const el = $(`comp-${i}-${p}`);
-    if (el) {
-      el.style.top = (cursor * 100).toFixed(1) + "%";
-      el.style.height = (ASM_H[p] * 100).toFixed(1) + "%";
-      el.style.display = "block";
-    }
-    cursor += ASM_H[p] - ASM_OVERLAP;
-  });
-  order.filter((p) => !present.includes(p)).forEach((p) => {
-    const el = $(`comp-${i}-${p}`); if (el) el.style.display = "none";
-  });
 }
 
 function imgSrc(i, part) {

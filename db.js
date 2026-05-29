@@ -41,7 +41,11 @@
     if (partType === "ratchet") return key;
     const n = (entry && entry.names) || {};
     const chi = (n.chi || "").trim();
-    if (chi) return chi.split(/\s+/)[0].replace(/\\/g, "/"); // 第一個中文變體；合體型「\」改「/」
+    if (chi) {
+      // 多變體格式為「陸版 台版」，取最後(台版)；去掉合體型分隔符 \ 與 /
+      const v = chi.split(/\s+/);
+      return v[v.length - 1].replace(/[\\/]/g, "");
+    }
     return (n.aka || n.eng || n.jap || key);
   }
 
@@ -158,7 +162,7 @@
           key,
           system: "CX",
           names: n,
-          name: (n.chi && n.chi.split(/\s+/)[0].replace(/\\/g, "/")) || n.eng || n.jap || key,
+          name: (n.chi && n.chi.trim().split(/\s+/).pop().replace(/[\\/]/g, "")) || n.eng || n.jap || key,
           stat: (raw && raw.stat) || null,
           desc: (raw && raw.desc) || "",
           attr: (raw && raw.attr) || [],

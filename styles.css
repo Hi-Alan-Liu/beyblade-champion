@@ -228,6 +228,13 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   color: var(--muted); padding: 8px 14px; font-size: 13px; cursor: pointer;
 }
 .modal-clear:hover { color: var(--text); border-color: var(--muted); }
+.modal-foot-right { display: flex; align-items: center; gap: 8px; }
+.modal-apply {
+  background: var(--accent); color: #fff; border: none; border-radius: 8px;
+  padding: 8px 16px; font-size: 13px; font-weight: 800; cursor: pointer;
+}
+.modal-apply:hover { filter: brightness(1.1); }
+.modal-apply[hidden] { display: none; }
 
 /* CX 拆解組裝器（Modal 內） */
 .modal-grid.cx-mode { display: block; }
@@ -238,11 +245,6 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   color: var(--muted); padding: 5px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
 }
 .cx-mode-btn.active { color: #fff; border-color: var(--accent); background: rgba(255,255,255,.05); }
-.cx-apply {
-  margin-left: auto; background: var(--accent); color: #fff; border: none;
-  border-radius: 8px; padding: 7px 16px; font-size: 13px; font-weight: 800; cursor: pointer;
-}
-.cx-apply:hover { filter: brightness(1.1); }
 .cx-section { margin-bottom: 16px; }
 .cx-section h4 { font-size: 13px; color: var(--text); margin-bottom: 8px; display: flex; gap: 8px; align-items: center; }
 .cx-section h4 small { color: var(--muted); font-weight: 400; }
@@ -376,14 +378,14 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   display: grid; grid-template-rows: 1fr 1fr 1fr; gap: 0;
 }
 
-/* 每顆陀螺一列：左組裝合成圖 | 右分開零件，名稱跨欄置底 */
+/* 每顆陀螺一列：上蓋 | 固鎖 | 軸心，名稱跨欄置底 */
 .card .bey-row {
   position: relative;
   display: grid;
-  grid-template-columns: 0.85fr 1.5fr;
+  grid-template-columns: 1.25fr 1fr .85fr;
   grid-template-rows: 1fr auto;
   align-items: center;
-  gap: 4px 14px;
+  gap: 4px 6px;
   padding: 14px 6px 14px 22px;
   border-bottom: 1px dashed rgba(255,255,255,.12);
 }
@@ -395,42 +397,25 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   background: var(--accent); transform: translateY(-50%);
   box-shadow: 0 0 0 4px rgba(255,255,255,.12);
 }
-
-/* 左：組裝合成（三層堆疊重疊成一顆陀螺） */
-.card .bey-assembly {
-  position: relative; width: 100%; height: 100%; max-height: 250px;
-}
-.card .asm-layer {
-  position: absolute; left: 50%; transform: translateX(-50%);
-  object-fit: contain; display: none;
-  filter: drop-shadow(0 6px 10px rgba(0,0,0,.45));
-}
-.card .asm-blade   { top: 0%;  width: 90%; height: 56%; z-index: 3; }
-.card .asm-ratchet { top: 40%; width: 74%; height: 42%; z-index: 2; }
-.card .asm-bit     { top: 63%; width: 46%; height: 40%; z-index: 1; }
-/* 一般上蓋：單圖填滿組裝層 */
-.card .asm-blade .asm-single { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-/* CX 子部件堆疊（組裝層與右側格共用偏移，以各自容器百分比定位） */
-.cx-sub { position: absolute; left: 50%; transform: translateX(-50%); object-fit: contain; }
-.cx-chip   { top: 0%;  width: 52%; height: 34%; z-index: 5; }
-.cx-metal  { top: 8%;  width: 84%; height: 42%; z-index: 4; }
-.cx-main   { top: 12%; width: 92%; height: 56%; z-index: 3; }
-.cx-over   { top: 34%; width: 88%; height: 46%; z-index: 2; }
-.cx-assist { top: 50%; width: 80%; height: 46%; z-index: 1; }
-.card .part-blade .cx-stack { position: relative; width: 100%; height: 100%; }
-
-/* 右：三個分開零件 */
-.card .bey-parts {
-  display: grid; grid-template-columns: 1.15fr 1fr .8fr; gap: 6px;
-  height: 100%; align-items: center;
-}
 .card .part {
   display: flex; align-items: center; justify-content: center;
-  height: 100%; max-height: 220px;     /* 隨列高伸縮，9:16 也填得滿 */
+  height: 100%; max-height: 230px;     /* 隨列高伸縮，9:16 也填得滿 */
 }
 .card .part img {
   max-width: 100%; max-height: 100%; object-fit: contain; display: none;
 }
+
+/* CX 上蓋：子部件在上蓋格內堆疊組成一個上蓋
+   由上而下：紋章鎖 → 超越刃 → 金屬刃 / 主刃 → 輔助戰刃 */
+.card .part-blade .cx-stack { position: relative; width: 100%; height: 100%; }
+/* 覆蓋 .card .part img{display:none}（那是給單張零件圖用的），CX 子圖要顯示 */
+.card .part .cx-sub { display: block; }
+.cx-sub { position: absolute; left: 50%; transform: translateX(-50%); object-fit: contain; }
+.cx-chip   { top: 0%;  width: 50%; height: 36%; z-index: 5; }
+.cx-over   { top: 14%; width: 86%; height: 46%; z-index: 4; }
+.cx-metal  { top: 30%; width: 90%; height: 48%; z-index: 3; }
+.cx-main   { top: 16%; width: 92%; height: 54%; z-index: 3; }
+.cx-assist { top: 46%; width: 80%; height: 48%; z-index: 1; }
 /* 零件圖裁切外框 */
 .card[data-shape="rounded"] .part img {
   width: 88%; height: 88%; max-width: none; max-height: none;
