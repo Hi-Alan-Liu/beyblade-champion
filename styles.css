@@ -407,7 +407,10 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 }
 /* 零件大小比例（參考實卡）：上蓋最大、固鎖小 20%、軸心小至 60% */
 .card .part-ratchet img { max-width: 80%; max-height: 80%; }
-.card .part-bit img     { max-width: 60%; max-height: 60%; }
+/* 軸心圖寬窄不一 → 以「高」對齊（固定高 60%，寬自動），大小才一致 */
+.card .part-bit img     { height: 60%; width: auto; max-width: 100%; max-height: 60%; }
+/* BX/UX/聯名 上蓋(單圖)稍微縮小至 80%；CX 組合上蓋(cx-stack)不受影響 */
+.card .part-blade > img { max-width: 80%; max-height: 80%; }
 
 /* CX 上蓋：子部件在上蓋格內堆疊組成一個上蓋
    由上而下：紋章鎖 → 超越刃 → 金屬刃 / 主刃 → 輔助戰刃 */
