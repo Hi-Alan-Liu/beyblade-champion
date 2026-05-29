@@ -557,7 +557,7 @@ function normalizePart(p) {
 function blankCard(rank) {
   return {
     title: "", rank: rank || "1", size: "ig", shape: "full",
-    logo: "HANIK TRACK", nick: "", watermark: "高雄漢諡",
+    logo: "Beybladex", nick: "",
     person: "", bg: "",
     beys: [0, 1, 2].map(() => ({
       blade: blankPart(), ratchet: blankPart(), bit: blankPart(),
@@ -577,7 +577,6 @@ function readCardFromDOM() {
     shape: $("shapeSelect").value,
     logo: $("logoInput").value,
     nick: $("nickInput").value,
-    watermark: $("watermarkInput").value,
     person: ($("personImg").style.display !== "none" && $("personImg").getAttribute("src")) || "",
     bg: $("panelBg").style.backgroundImage || "",
     beys: [0, 1, 2].map((i) => {
@@ -609,7 +608,6 @@ function loadCardToDOM(c) {
   $("shapeSelect").value = c.shape || "full"; state.shape = c.shape || "full";
   $("logoInput").value = c.logo ?? ""; $("logoText").textContent = c.logo ?? "";
   $("nickInput").value = c.nick || ""; $("rankNick").textContent = c.nick || "";
-  $("watermarkInput").value = c.watermark ?? "高雄漢諡"; $("watermarkText").textContent = c.watermark ?? "高雄漢諡";
   setImg($("personImg"), null, c.person || "");
   $("panelBg").style.backgroundImage = c.bg || "";
   const parts = ["blade", "ratchet", "bit"];
@@ -785,9 +783,6 @@ function bindEvents() {
   });
   $("nickInput").addEventListener("input", (e) => {
     $("rankNick").textContent = e.target.value;
-  });
-  $("watermarkInput").addEventListener("input", (e) => {
-    $("watermarkText").textContent = e.target.value;
   });
 
   $("personFile").addEventListener("change", (e) => {
