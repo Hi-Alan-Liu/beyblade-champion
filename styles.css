@@ -1,14 +1,15 @@
 /* ===== 全域 ===== */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --accent: #E10600;          /* 名次主色，JS 會切換 */
-  --card-h: 1350px;           /* 卡片高度，隨匯出尺寸切換 */
-  --bg: #14141a;
-  --panel-bg: #1c1c24;
-  --line: #2c2c38;
-  --text: #e8e8ee;
-  --muted: #8a8a98;
-  --gold: #E7C56B;            /* 卡片金色典雅主色 */
+  --accent: #2f8fe6;          /* 電光藍：主要互動色（戰鬥陀螺風） */
+  --accent-2: #ff6a2c;        /* 能量橘：主要 CTA */
+  --card-h: 1080px;           /* 卡片高度，隨匯出尺寸切換 */
+  --bg: #0c111d;              /* 深鋼藍黑底 */
+  --panel-bg: #131b2b;
+  --line: #283449;
+  --text: #e9eef7;
+  --muted: #8b96ad;
+  --gold: #E7C56B;            /* 卡片金色主色 */
   --gold-deep: #B0801F;       /* 金色描邊/陰影用深色 */
 }
 body {
@@ -34,14 +35,6 @@ body {
   font-family: ui-monospace, monospace; color: #ffe9b0;
 }
 .file-banner strong { color: #fff; }
-
-/* ===== 頂列 ===== */
-.topbar {
-  display: flex; align-items: baseline; gap: 12px;
-  padding: 16px 24px; border-bottom: 1px solid var(--line);
-}
-.topbar h1 { font-size: 20px; font-weight: 800; }
-.topbar-sub { font-size: 13px; color: var(--muted); }
 
 /* ===== 版面 ===== */
 .layout {
@@ -104,11 +97,14 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 }
 
 .btn-download {
-  background: var(--accent); color: #fff; border: none; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent-2), #ff8c42);
+  color: #fff; border: none; border-radius: 10px;
   padding: 14px; font-size: 16px; font-weight: 800; cursor: pointer;
+  letter-spacing: 2px; text-transform: uppercase;
+  box-shadow: 0 6px 18px rgba(255,106,44,.32);
   position: sticky; top: 0; z-index: 5;
 }
-.btn-download:hover { filter: brightness(1.1); }
+.btn-download:hover { filter: brightness(1.08); }
 .btn-download:disabled { opacity: .6; cursor: progress; }
 .btn-reset {
   background: transparent; color: var(--muted); border: 1px solid var(--line);
@@ -292,12 +288,6 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 }
 .card-tabs .tab-add:hover { color: #fff; border-color: var(--accent); }
 
-.btn-download-all {
-  background: transparent; color: var(--text); border: 1px solid var(--accent);
-  border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 700; cursor: pointer;
-}
-.btn-download-all:hover { background: rgba(255,255,255,.05); }
-.btn-download-all:disabled { opacity: .6; cursor: progress; }
 .stage {
   transform-origin: top center;
   /* JS 設定 transform: scale() 與容器尺寸 */
@@ -309,11 +299,14 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 .card {
   position: relative;
   width: 1080px; height: var(--card-h);
-  /* 預設背景：頂部金色微光 + 左下暖色暈影 + 深色斜向漸層，呼應金色典雅風 */
+  /* 戰鬥陀螺風背景：深鋼藍底 + 電光藍/能量橘能量光 + 斜向速度線 + 旋轉光暈 */
   background:
-    radial-gradient(70% 42% at 50% 0%, rgba(231,197,107,.12), rgba(231,197,107,0) 62%),
-    radial-gradient(110% 80% at 0% 100%, rgba(80,60,28,.45), rgba(0,0,0,0) 58%),
-    linear-gradient(155deg, #1b1b23 0%, #121218 52%, #0a0a0e 100%);
+    radial-gradient(56% 32% at 50% -3%, rgba(231,197,107,.16), transparent 60%),       /* 頂部金光（標題） */
+    radial-gradient(82% 60% at 24% 40%, rgba(46,128,224,.28), transparent 60%),         /* 左中電光藍能量（人物後） */
+    radial-gradient(62% 50% at 10% 98%, rgba(230,108,40,.26), transparent 58%),          /* 左下能量橘 */
+    conic-gradient(from 200deg at 80% 28%, rgba(80,160,235,.14), transparent 36%),        /* 右上旋轉光暈 */
+    repeating-linear-gradient(118deg, rgba(255,255,255,.04) 0 2px, transparent 2px 30px), /* 斜向速度線 */
+    linear-gradient(160deg, #1b2640 0%, #141d30 52%, #0e1422 100%);                       /* 深鋼藍底（比純黑亮） */
   overflow: hidden;
   color: #fff;
   font-family: "Arial Black", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
@@ -347,10 +340,9 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 
 /* 人物照 */
 .card .person {
-  position: absolute; left: 0; bottom: 0; z-index: 2;
-  width: 56%; height: 92%;
+  position: absolute; left: 0; bottom: 0; z-index: 4;   /* 蓋在右側陀螺面板(z-index:3)之上 */
+  width: 60%; height: 94%;
   display: flex; align-items: flex-end; justify-content: flex-start;
-  overflow: hidden;
 }
 .card .person img {
   width: 100%; height: 100%;
@@ -390,8 +382,8 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   position: absolute; top: 150px; bottom: 140px; right: 36px; z-index: 3;
   width: 560px;            /* 高度由 top/bottom 錨定，隨卡片高度伸縮 */
   border-radius: 28px; overflow: hidden;
-  /* 預設漸層背景（暖金→深色斜向），上傳的面板背景圖會疊在其上 */
-  background: linear-gradient(155deg, rgba(58,49,30,.95) 0%, rgba(30,27,33,.95) 48%, rgba(13,12,17,.96) 100%);
+  /* 預設漸層背景（鋼藍玻璃感→深色斜向），上傳的面板背景圖會疊在其上 */
+  background: linear-gradient(155deg, rgba(36,50,76,.92) 0%, rgba(21,28,44,.94) 50%, rgba(12,17,28,.95) 100%);
   border: 1px solid rgba(255,255,255,.08);
   box-shadow: 0 20px 50px rgba(0,0,0,.5);
   padding: 26px 26px 26px 30px;

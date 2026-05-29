@@ -7,18 +7,12 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <h1>陀螺配置卡片產生器</h1>
-    <span class="topbar-sub">Beyblade Ranking Card Generator</span>
-  </header>
-
   <main class="layout">
     <!-- 左：控制面板 -->
     <section class="controls" id="controls">
-      <button class="btn-download" id="btnDownload">⬇ 下載目前卡片 PNG</button>
-      <button class="btn-download-all" id="btnDownloadAll">⬇⬇ 匯出全部卡片</button>
+      <button class="btn-download" id="btnDownload">輸出 PNG</button>
 
-      <details class="group" open>
+      <details class="group">
         <summary>名次與文字</summary>
         <label>匯出尺寸
           <select id="sizeSelect">
@@ -41,7 +35,7 @@
         </label>
       </details>
 
-      <details class="group" open>
+      <details class="group">
         <summary>圖片</summary>
         <label>人物照片
           <input type="file" id="personFile" accept="image/*" />

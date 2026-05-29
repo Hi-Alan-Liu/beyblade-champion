@@ -52,7 +52,7 @@ function buildBeyControls() {
     // --- 左側控制 block：每個部件一個「圖庫選取格」+ 可編輯名稱 ---
     const block = document.createElement("details");
     block.className = "group bey-block";
-    block.open = true;
+    block.open = false;
     block.innerHTML = `
       <summary>陀螺 ${i + 1}</summary>
       <div class="bey-slots">
@@ -807,7 +807,6 @@ function bindEvents() {
   });
 
   $("btnDownload").addEventListener("click", downloadCard);
-  $("btnDownloadAll").addEventListener("click", downloadAll);
   $("btnDuplicate").addEventListener("click", duplicateCard);
   $("btnReset").addEventListener("click", () => {
     if (confirm("確定清空全部卡片並清除暫存？")) { clearState(); location.reload(); }
@@ -887,29 +886,6 @@ async function downloadCard() {
     triggerDownload(url, cardFilename(cards[active], active));
   } catch (err) {
     alert("產生圖片失敗：" + err.message + "\n（請確認 vendor/html-to-image.js 存在或網路可載入）");
-    console.error(err);
-  } finally { btn.disabled = false; btn.textContent = oldText; }
-}
-
-async function downloadAll() {
-  if (exportNeedsHttp()) return;
-  const btn = $("btnDownloadAll");
-  btn.disabled = true; const oldText = btn.textContent;
-  try {
-    if (!window.htmlToImage) throw new Error("html-to-image 未載入");
-    cards[active] = { ...cards[active], ...readCardFromDOM() };
-    for (let i = 0; i < cards.length; i++) {
-      btn.textContent = `匯出中 ${i + 1}/${cards.length}…`;
-      loadCardToDOM(cards[i]);
-      fitStage();
-      await delay(80);                       // 等畫面套用
-      const url = await exportCurrentDataURL();
-      triggerDownload(url, cardFilename(cards[i], i));
-      await delay(280);                      // 避免瀏覽器擋連續下載
-    }
-    loadCardToDOM(cards[active]); fitStage(); // 還原回原本選的卡
-  } catch (err) {
-    alert("匯出全部失敗：" + err.message);
     console.error(err);
   } finally { btn.disabled = false; btn.textContent = oldText; }
 }
