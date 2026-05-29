@@ -75,13 +75,13 @@ function buildBeyControls() {
     row.className = "bey-row";
     row.innerHTML = `
       <div class="bey-assembly" id="asm-${i}">
-        <img class="asm-layer asm-blade"   id="comp-${i}-blade"   alt="" />
+        <div class="asm-layer asm-blade" id="comp-${i}-blade"></div>
         <img class="asm-layer asm-ratchet" id="comp-${i}-ratchet" alt="" />
         <img class="asm-layer asm-bit"     id="comp-${i}-bit"     alt="" />
       </div>
       <div class="bey-parts">
         ${PART_DEFS.map(
-          (p) => `<div class="part part-${p.key}">
+          (p) => `<div class="part part-${p.key}" id="part-${i}-${p.key}">
             <img id="img-${i}-${p.key}" alt="" />
             <span class="ph" id="ph-${i}-${p.key}">${p.label}</span>
           </div>`
@@ -145,13 +145,19 @@ function openGallery(bey, part) {
   // 系統別分頁：只有上蓋需要（固鎖/軸心跨系統共用，平鋪即可）
   const tabsEl = $("galTabs");
   if (part === "blade") {
-    const systems = BeyDB.systems("blade"); // 例：BX, UX, other（CX 於後續步驟加入）
+    // 一般系統(BX/UX/其他) + CX 拆解（CX 走子部件組裝流程）
+    const systems = [...BeyDB.systems("blade"), "CX"];
     galTarget.system = systems[0] || null;
     const label = (s) => (s === "other" ? "其他" : s);
     tabsEl.innerHTML = systems.map((s) => `<button type="button" class="gtab" data-sys="${s}">${label(s)}</button>`).join("");
     tabsEl.hidden = false;
     tabsEl.querySelectorAll(".gtab").forEach((b) =>
-      b.addEventListener("click", () => { galTarget.system = b.dataset.sys; markActiveTab(); renderGalleryGrid(); })
+      b.addEventListener("click", () => {
+        galTarget.system = b.dataset.sys;
+        if (b.dataset.sys === "CX") startCxDraft();
+        markActiveTab();
+        renderGalleryGrid();
+      })
     );
     markActiveTab();
   } else {
@@ -173,6 +179,14 @@ function closeGallery() { $("galleryModal").classList.add("hidden"); }
 
 function renderGalleryGrid() {
   const grid = $("galGrid");
+  grid.classList.remove("cx-mode");
+  // CX 拆解：走子部件組裝流程
+  if (galTarget.part === "blade" && galTarget.system === "CX") {
+    $("galSearch").style.display = "none";
+    renderCxBuilder();
+    return;
+  }
+  $("galSearch").style.display = "";
   const q = $("galSearch").value;
   let items = BeyDB.search(galTarget.part, q);
   if (galTarget.part === "blade" && galTarget.system) {
@@ -206,6 +220,80 @@ function pickGalleryEntry(entry) {
   closeGallery();
 }
 
+// ===== CX 拆解上蓋組裝器（Modal 內） =====
+let cxDraft = { mode: 3, comps: {} };
+
+function startCxDraft() {
+  cxDraft = { mode: 3, comps: {} };
+  const existing = state.beys[galTarget.bey] && state.beys[galTarget.bey].blade;
+  if (existing && existing.cx) {
+    cxDraft.mode = existing.mode || 3;
+    Object.keys(existing.comps || {}).forEach((c) => {
+      const e = existing.comps[c];
+      if (e && e.key) { const full = BeyDB.cxGet(c, e.key); if (full) cxDraft.comps[c] = full; }
+    });
+  }
+}
+
+function renderCxBuilder() {
+  const grid = $("galGrid");
+  grid.classList.add("cx-mode");
+  const names = BeyDB.partNames();
+  const compName = (c) => (names[c] && names[c].chi ? names[c].chi.split(/\s+/)[0] : c);
+  const comps = BeyDB.cxComponents(cxDraft.mode);
+  grid.innerHTML = `
+    <div class="cx-modebar">
+      <span>組合方式：</span>
+      <button type="button" class="cx-mode-btn ${cxDraft.mode === 3 ? "active" : ""}" data-mode="3">3 件</button>
+      <button type="button" class="cx-mode-btn ${cxDraft.mode === 4 ? "active" : ""}" data-mode="4">4 件</button>
+      <button type="button" class="cx-apply" id="cxApply">套用至卡片</button>
+    </div>
+    ${comps
+      .map((c) => {
+        const picked = cxDraft.comps[c];
+        const opts = BeyDB.cxList(c);
+        return `<div class="cx-section" data-comp="${c}">
+          <h4>${compName(c)} <small>${c}</small>${picked ? `<span class="cx-picked">已選：${picked.name}</span>` : ""}</h4>
+          <div class="cx-opts">
+            ${opts
+              .map(
+                (o) => `<button type="button" class="cx-opt ${picked && picked.key === o.key ? "active" : ""}" data-comp="${c}" data-key="${o.key}">
+                <img src="${o.img}" loading="lazy" alt="${o.name}" />
+                <span>${o.name}</span>
+              </button>`
+              )
+              .join("")}
+          </div>
+        </div>`;
+      })
+      .join("")}
+  `;
+  grid.querySelectorAll(".cx-mode-btn").forEach((b) =>
+    b.addEventListener("click", () => { cxDraft.mode = Number(b.dataset.mode); renderCxBuilder(); })
+  );
+  grid.querySelectorAll(".cx-opt").forEach((b) =>
+    b.addEventListener("click", () => { cxDraft.comps[b.dataset.comp] = BeyDB.cxGet(b.dataset.comp, b.dataset.key); renderCxBuilder(); })
+  );
+  $("cxApply").addEventListener("click", applyCxDraft);
+}
+
+function applyCxDraft() {
+  const comps = BeyDB.cxComponents(cxDraft.mode);
+  const chosen = {};
+  comps.forEach((c) => {
+    const e = cxDraft.comps[c];
+    if (e) chosen[c] = { key: e.key, img: e.img, name: e.name };
+  });
+  if (!Object.keys(chosen).length) { alert("請至少選一個 CX 子部件"); return; }
+  const comp = BeyDB.cxComposition();
+  const delim = (comp && comp.delim) || ".";
+  const name = comps.filter((c) => chosen[c]).map((c) => chosen[c].name).join(delim);
+  setPartData(galTarget.bey, "blade", {
+    source: "gallery", cx: true, mode: cxDraft.mode, comps: chosen, name, group: "CX", key: "", img: "",
+  });
+  closeGallery();
+}
+
 function onGalleryUpload(e) {
   const f = e.target.files[0];
   if (!f) return;
@@ -225,8 +313,7 @@ function setPartData(i, part, data) {
   if (state.beys[i]) state.beys[i][part] = d;
   const inp = nameInput(i, part);
   if (inp) inp.value = d.name;
-  setPartImage(i, part, d.img);  // 右側分開零件 + 左側組裝合成層
-  renderSlot(i, part);           // 左側控制格縮圖
+  renderPart(i, part);           // 右側分開 + 左側組裝 + 控制格縮圖（含 CX）
   renderBeyName(i);
   saveState();
 }
@@ -235,12 +322,12 @@ function clearSlot(i, part) { setPartData(i, part, blankPart()); }
 
 // 更新左側控制格的縮圖 / 空狀態 / 名稱
 function renderSlot(i, part) {
-  const d = (cards[active] && cards[active].beys[i] && cards[active].beys[i][part]) ||
-            (state.beys[i] && state.beys[i][part]) || blankPart();
+  const d = (state.beys[i] && state.beys[i][part]) || blankPart();
   const thumb = $(`slot-img-${i}-${part}`);
   const empty = $(`slot-empty-${i}-${part}`);
+  const img = d.cx ? cxThumbImg(d) : d.img;
   if (thumb) {
-    if (d.img) { thumb.src = d.img; thumb.style.display = "block"; if (empty) empty.style.display = "none"; }
+    if (img) { thumb.src = img; thumb.style.display = "block"; if (empty) empty.style.display = "none"; }
     else { thumb.removeAttribute("src"); thumb.style.display = "none"; if (empty) empty.style.display = "flex"; }
   }
   const inp = nameInput(i, part);
@@ -349,7 +436,7 @@ function setImg(imgEl, phEl, dataUrl) {
   }
 }
 
-// 同步更新某部件在卡片上的兩處呈現：右側分開零件 + 左側組裝合成層
+// 固鎖/軸心：同步更新右側分開零件 + 左側組裝合成層（皆為單一 <img>）
 function setPartImage(i, part, dataUrl) {
   setImg($(`img-${i}-${part}`), $(`ph-${i}-${part}`), dataUrl); // 右側分開（空時顯示提示框）
   const comp = $(`comp-${i}-${part}`);                          // 左側組裝層（空時整層隱藏，不留洞）
@@ -357,6 +444,70 @@ function setPartImage(i, part, dataUrl) {
     if (dataUrl) { comp.src = dataUrl; comp.style.display = "block"; }
     else { comp.removeAttribute("src"); comp.style.display = "none"; }
   }
+}
+
+// CX 子部件由上而下的堆疊順序
+const CX_STACK_ORDER = ["chip", "metal", "main", "over", "assist"];
+function cxOrderedComps(d) {
+  return CX_STACK_ORDER
+    .filter((c) => d.comps && d.comps[c] && d.comps[c].img)
+    .map((c) => ({ component: c, img: d.comps[c].img }));
+}
+function cxThumbImg(d) {
+  if (!d.comps) return "";
+  return (d.comps.main && d.comps.main.img) || (d.comps.chip && d.comps.chip.img) ||
+         (cxOrderedComps(d)[0] && cxOrderedComps(d)[0].img) || "";
+}
+
+// 上蓋渲染：一般 = 單圖；CX = 子部件多層堆疊（組裝層 + 右側格皆然）
+function renderBlade(i, d) {
+  const asm = $(`comp-${i}-blade`);    // 組裝層容器(div)
+  const cell = $(`part-${i}-blade`);   // 右側格(div)
+  const cellImg = $(`img-${i}-blade`);
+  const cellPh = $(`ph-${i}-blade`);
+  if (!asm || !cell) return;
+  // 清掉先前注入的 CX 子圖
+  asm.querySelectorAll(".cx-sub").forEach((n) => n.remove());
+  cell.querySelectorAll(".cx-stack").forEach((n) => n.remove());
+
+  if (d && d.cx) {
+    if (cellImg) cellImg.style.display = "none";
+    if (cellPh) cellPh.style.display = "none";
+    const comps = cxOrderedComps(d);
+    // 組裝層：子圖直接疊在 blade 區域
+    asm.style.display = comps.length ? "block" : "none";
+    comps.forEach((c) => {
+      const im = document.createElement("img");
+      im.className = "cx-sub cx-" + c.component;
+      im.src = c.img;
+      asm.appendChild(im);
+    });
+    // 右側格：迷你堆疊
+    const stack = document.createElement("div");
+    stack.className = "cx-stack";
+    comps.forEach((c) => {
+      const im = document.createElement("img");
+      im.className = "cx-sub cx-" + c.component;
+      im.src = c.img;
+      stack.appendChild(im);
+    });
+    cell.appendChild(stack);
+  } else {
+    // 一般上蓋：組裝層放單一 img；右側格用既有 img/ph
+    let aimg = asm.querySelector("img.asm-single");
+    if (!aimg) { aimg = document.createElement("img"); aimg.className = "asm-single"; asm.appendChild(aimg); }
+    if (d && d.img) { aimg.src = d.img; aimg.style.display = "block"; asm.style.display = "block"; }
+    else { aimg.removeAttribute("src"); aimg.style.display = "none"; asm.style.display = "none"; }
+    setImg(cellImg, cellPh, (d && d.img) || "");
+  }
+}
+
+// 統一部件渲染入口（讀 state.beys，與目前畫面一致，downloadAll 載入別張卡也正確）
+function renderPart(i, part) {
+  const d = (state.beys[i] && state.beys[i][part]) || blankPart();
+  if (part === "blade") renderBlade(i, d);
+  else setPartImage(i, part, d.img);
+  renderSlot(i, part);
 }
 
 function imgSrc(i, part) {
@@ -382,13 +533,25 @@ function blankPart() {
 }
 function normalizePart(p) {
   p = p || {};
-  return {
+  const out = {
     source: p.source || (p.img ? "upload" : ""), // 舊資料有圖必為自訂上傳
     key: p.key || "",
     group: p.group || "",
     name: p.name || "",
     img: p.img || "",
   };
+  // CX 拆解上蓋：無單一圖，由子部件 comps 組成（{component:{key,img,name}}）
+  if (p.cx) {
+    out.cx = true;
+    out.mode = p.mode || 3;
+    out.comps = {};
+    Object.keys(p.comps || {}).forEach((c) => {
+      const e = p.comps[c] || {};
+      out.comps[c] = { key: e.key || "", img: e.img || "", name: e.name || "" };
+    });
+    out.group = "CX";
+  }
+  return out;
 }
 
 function blankCard(rank) {
@@ -421,15 +584,17 @@ function readCardFromDOM() {
       const o = {};
       const prevBey = (prev.beys && prev.beys[i]) || {};
       parts.forEach((p) => {
-        const meta = normalizePart(prevBey[p]);
-        const img = imgSrc(i, p);
-        o[p] = {
-          source: meta.source || (img ? "upload" : ""),
-          key: meta.key,
-          group: meta.group,
-          name: nameInput(i, p)?.value || "",
-          img,
-        };
+        // 以模型(prev)為底，保留 cx/mode/comps/source/key/group；名稱以輸入框為準
+        const base = normalizePart(prevBey[p]);
+        const inp = nameInput(i, p);
+        if (inp) base.name = inp.value;
+        if (!base.cx) {
+          // 非 CX：圖片以畫面為準（可能來自圖庫或自訂上傳）
+          const img = imgSrc(i, p);
+          base.img = img;
+          base.source = base.source || (img ? "upload" : "");
+        }
+        o[p] = base;
       });
       return o;
     }),
@@ -454,8 +619,7 @@ function loadCardToDOM(c) {
       const cell = normalizePart(b && b[p]);
       state.beys[i][p] = cell;
       const inp = nameInput(i, p); if (inp) inp.value = cell.name || "";
-      setPartImage(i, p, cell.img || "");
-      renderSlot(i, p);
+      renderPart(i, p);
     });
     renderBeyName(i);
   });

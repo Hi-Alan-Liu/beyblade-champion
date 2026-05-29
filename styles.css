@@ -222,6 +222,34 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 }
 .modal-clear:hover { color: var(--text); border-color: var(--muted); }
 
+/* CX 拆解組裝器（Modal 內） */
+.modal-grid.cx-mode { display: block; }
+.cx-modebar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.cx-modebar > span { font-size: 13px; color: var(--muted); }
+.cx-mode-btn {
+  background: #0e0e13; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); padding: 5px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.cx-mode-btn.active { color: #fff; border-color: var(--accent); background: rgba(255,255,255,.05); }
+.cx-apply {
+  margin-left: auto; background: var(--accent); color: #fff; border: none;
+  border-radius: 8px; padding: 7px 16px; font-size: 13px; font-weight: 800; cursor: pointer;
+}
+.cx-apply:hover { filter: brightness(1.1); }
+.cx-section { margin-bottom: 16px; }
+.cx-section h4 { font-size: 13px; color: var(--text); margin-bottom: 8px; display: flex; gap: 8px; align-items: center; }
+.cx-section h4 small { color: var(--muted); font-weight: 400; }
+.cx-picked { color: var(--accent); font-size: 12px; margin-left: auto; font-weight: 700; }
+.cx-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+.cx-opt {
+  background: #0e0e13; border: 1px solid var(--line); border-radius: 8px; padding: 6px;
+  cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.cx-opt:hover { border-color: var(--accent); }
+.cx-opt.active { border-color: var(--accent); background: rgba(255,255,255,.06); }
+.cx-opt img { width: 100%; aspect-ratio: 1; object-fit: contain; }
+.cx-opt span { font-size: 11px; color: var(--text); text-align: center; line-height: 1.1; word-break: break-all; }
+
 /* ===== 預覽舞台 ===== */
 .preview {
   position: sticky; top: 24px;
@@ -373,6 +401,16 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 .card .asm-blade   { top: 0%;  width: 90%; height: 56%; z-index: 3; }
 .card .asm-ratchet { top: 40%; width: 74%; height: 42%; z-index: 2; }
 .card .asm-bit     { top: 63%; width: 46%; height: 40%; z-index: 1; }
+/* 一般上蓋：單圖填滿組裝層 */
+.card .asm-blade .asm-single { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+/* CX 子部件堆疊（組裝層與右側格共用偏移，以各自容器百分比定位） */
+.cx-sub { position: absolute; left: 50%; transform: translateX(-50%); object-fit: contain; }
+.cx-chip   { top: 0%;  width: 52%; height: 34%; z-index: 5; }
+.cx-metal  { top: 8%;  width: 84%; height: 42%; z-index: 4; }
+.cx-main   { top: 12%; width: 92%; height: 56%; z-index: 3; }
+.cx-over   { top: 34%; width: 88%; height: 46%; z-index: 2; }
+.cx-assist { top: 50%; width: 80%; height: 46%; z-index: 1; }
+.card .part-blade .cx-stack { position: relative; width: 100%; height: 100%; }
 
 /* 右：三個分開零件 */
 .card .bey-parts {
