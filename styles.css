@@ -22,6 +22,17 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: #3a3a48; }
 ::-webkit-scrollbar-track { background: transparent; }
 
+/* file:// 匯出提示橫幅 */
+.file-banner {
+  background: #5a3a00; color: #ffd479; font-size: 13px;
+  padding: 8px 16px; text-align: center; border-bottom: 1px solid #6b4500;
+}
+.file-banner code {
+  background: rgba(0,0,0,.35); padding: 1px 6px; border-radius: 4px;
+  font-family: ui-monospace, monospace; color: #ffe9b0;
+}
+.file-banner strong { color: #fff; }
+
 /* ===== 頂列 ===== */
 .topbar {
   display: flex; align-items: baseline; gap: 12px;
@@ -330,14 +341,14 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   display: grid; grid-template-rows: 1fr 1fr 1fr; gap: 0;
 }
 
-/* 每顆陀螺一列 */
+/* 每顆陀螺一列：左組裝合成圖 | 右分開零件，名稱跨欄置底 */
 .card .bey-row {
   position: relative;
   display: grid;
-  grid-template-columns: 1.25fr 1fr .85fr;
+  grid-template-columns: 0.85fr 1.5fr;
   grid-template-rows: 1fr auto;
   align-items: center;
-  gap: 6px;
+  gap: 4px 14px;
   padding: 14px 6px 14px 22px;
   border-bottom: 1px dashed rgba(255,255,255,.12);
 }
@@ -349,9 +360,28 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   background: var(--accent); transform: translateY(-50%);
   box-shadow: 0 0 0 4px rgba(255,255,255,.12);
 }
+
+/* 左：組裝合成（三層堆疊重疊成一顆陀螺） */
+.card .bey-assembly {
+  position: relative; width: 100%; height: 100%; max-height: 250px;
+}
+.card .asm-layer {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  object-fit: contain; display: none;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.45));
+}
+.card .asm-blade   { top: 0%;  width: 90%; height: 56%; z-index: 3; }
+.card .asm-ratchet { top: 40%; width: 74%; height: 42%; z-index: 2; }
+.card .asm-bit     { top: 63%; width: 46%; height: 40%; z-index: 1; }
+
+/* 右：三個分開零件 */
+.card .bey-parts {
+  display: grid; grid-template-columns: 1.15fr 1fr .8fr; gap: 6px;
+  height: 100%; align-items: center;
+}
 .card .part {
   display: flex; align-items: center; justify-content: center;
-  height: 100%; max-height: 230px;     /* 隨列高伸縮，9:16 也填得滿 */
+  height: 100%; max-height: 220px;     /* 隨列高伸縮，9:16 也填得滿 */
 }
 .card .part img {
   max-width: 100%; max-height: 100%; object-fit: contain; display: none;

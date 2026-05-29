@@ -70,16 +70,23 @@ function buildBeyControls() {
     `;
     wrap.appendChild(block);
 
-    // --- 卡片預覽列 ---
+    // --- 卡片預覽列：左組裝合成圖 + 右分開零件 + 名稱 ---
     const row = document.createElement("div");
     row.className = "bey-row";
     row.innerHTML = `
-      ${PART_DEFS.map(
-        (p) => `<div class="part part-${p.key}">
-          <img id="img-${i}-${p.key}" alt="" />
-          <span class="ph" id="ph-${i}-${p.key}">${p.label}</span>
-        </div>`
-      ).join("")}
+      <div class="bey-assembly" id="asm-${i}">
+        <img class="asm-layer asm-blade"   id="comp-${i}-blade"   alt="" />
+        <img class="asm-layer asm-ratchet" id="comp-${i}-ratchet" alt="" />
+        <img class="asm-layer asm-bit"     id="comp-${i}-bit"     alt="" />
+      </div>
+      <div class="bey-parts">
+        ${PART_DEFS.map(
+          (p) => `<div class="part part-${p.key}">
+            <img id="img-${i}-${p.key}" alt="" />
+            <span class="ph" id="ph-${i}-${p.key}">${p.label}</span>
+          </div>`
+        ).join("")}
+      </div>
       <div class="bey-name" id="name-${i}"></div>
     `;
     rows.appendChild(row);
@@ -218,8 +225,8 @@ function setPartData(i, part, data) {
   if (state.beys[i]) state.beys[i][part] = d;
   const inp = nameInput(i, part);
   if (inp) inp.value = d.name;
-  setImg($(`img-${i}-${part}`), $(`ph-${i}-${part}`), d.img); // 右側分開零件預覽
-  renderSlot(i, part);                                         // 左側控制格縮圖
+  setPartImage(i, part, d.img);  // 右側分開零件 + 左側組裝合成層
+  renderSlot(i, part);           // 左側控制格縮圖
   renderBeyName(i);
   saveState();
 }
@@ -330,6 +337,7 @@ function readImage(file, cb) {
 }
 
 function setImg(imgEl, phEl, dataUrl) {
+  if (!imgEl) return;
   if (dataUrl) {
     imgEl.src = dataUrl;
     imgEl.style.display = "block";
@@ -338,6 +346,16 @@ function setImg(imgEl, phEl, dataUrl) {
     imgEl.removeAttribute("src");
     imgEl.style.display = "none";
     if (phEl) phEl.style.display = "flex";
+  }
+}
+
+// 同步更新某部件在卡片上的兩處呈現：右側分開零件 + 左側組裝合成層
+function setPartImage(i, part, dataUrl) {
+  setImg($(`img-${i}-${part}`), $(`ph-${i}-${part}`), dataUrl); // 右側分開（空時顯示提示框）
+  const comp = $(`comp-${i}-${part}`);                          // 左側組裝層（空時整層隱藏，不留洞）
+  if (comp) {
+    if (dataUrl) { comp.src = dataUrl; comp.style.display = "block"; }
+    else { comp.removeAttribute("src"); comp.style.display = "none"; }
   }
 }
 
@@ -436,7 +454,7 @@ function loadCardToDOM(c) {
       const cell = normalizePart(b && b[p]);
       state.beys[i][p] = cell;
       const inp = nameInput(i, p); if (inp) inp.value = cell.name || "";
-      setImg($(`img-${i}-${p}`), $(`ph-${i}-${p}`), cell.img || "");
+      setPartImage(i, p, cell.img || "");
       renderSlot(i, p);
     });
     renderBeyName(i);
@@ -693,7 +711,21 @@ function cardFilename(c, i) {
 }
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// 圖庫圖片需 http 才能匯出（file:// 會被瀏覽器擋讀像素）。攔下並給清楚指示。
+function exportNeedsHttp() {
+  if (location.protocol === "file:") {
+    alert(
+      "匯出 PNG 需要透過本機伺服器開啟（圖庫圖片在 file:// 下無法被擷取）。\n\n" +
+      "請在專案資料夾執行：\n    node serve.js\n\n" +
+      "然後改用瀏覽器開啟： http://localhost:8080"
+    );
+    return true;
+  }
+  return false;
+}
+
 async function downloadCard() {
+  if (exportNeedsHttp()) return;
   const btn = $("btnDownload");
   btn.disabled = true; const oldText = btn.textContent; btn.textContent = "產生中…";
   try {
@@ -708,6 +740,7 @@ async function downloadCard() {
 }
 
 async function downloadAll() {
+  if (exportNeedsHttp()) return;
   const btn = $("btnDownloadAll");
   btn.disabled = true; const oldText = btn.textContent;
   try {
@@ -743,5 +776,18 @@ function init() {
   }
   fitStage();
   window.addEventListener("resize", fitStage);
+  showFileProtocolBanner();
+}
+
+// file:// 開啟時提示：可編輯預覽，但匯出需改用 http
+function showFileProtocolBanner() {
+  if (location.protocol !== "file:") return;
+  if ($("fileBanner")) return;
+  const bar = document.createElement("div");
+  bar.id = "fileBanner";
+  bar.className = "file-banner";
+  bar.innerHTML = "⚠ 目前以 file:// 開啟：可編輯與預覽，但<strong>下載 PNG 需改用本機伺服器</strong>　" +
+    "（在專案資料夾執行 <code>node serve.js</code> → 開 <code>http://localhost:8080</code>）";
+  document.body.insertBefore(bar, document.body.firstChild);
 }
 document.addEventListener("DOMContentLoaded", init);
