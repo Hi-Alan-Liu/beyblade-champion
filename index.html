@@ -10,6 +10,7 @@
   <main class="layout">
     <!-- 左：控制面板 -->
     <section class="controls" id="controls">
+      <button type="button" class="drawer-close" id="btnDrawerClose">完成 ✕</button>
       <button class="btn-download" id="btnDownload">輸出 PNG</button>
 
       <details class="group">
@@ -86,6 +87,13 @@
       </div>
     </section>
   </main>
+
+  <!-- 手機/平板：抽屜遮罩 + 底部行動工具列（桌機隱藏） -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <div class="mobile-bar" id="mobileBar">
+    <button type="button" class="mbar-edit" id="btnDrawer">✎ 編輯設定</button>
+    <button type="button" class="mbar-export" id="btnExportMobile">⬇ 輸出 PNG</button>
+  </div>
 
   <!-- 離線優先：先載本機版，失敗才退回 CDN -->
   <script src="vendor/html-to-image.js"></script>

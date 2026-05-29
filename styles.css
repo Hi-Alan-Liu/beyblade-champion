@@ -44,9 +44,59 @@ body {
   padding: 24px;
   align-items: start;
 }
-@media (max-width: 900px) {
-  .layout { grid-template-columns: 1fr; }
-  .preview { order: -1; }
+/* 桌機預設隱藏手機/平板專用元件 */
+.drawer-close, .drawer-backdrop, .mobile-bar { display: none; }
+
+/* ===== 手機 / 平板（≤1024px）：設定改為可展開的 Sidebar 抽屜 ===== */
+@media (max-width: 1024px) {
+  .layout { grid-template-columns: 1fr; padding: 12px; gap: 12px; }
+  .preview { position: static; }
+  #previewArea { padding-bottom: 80px; }            /* 留白給底部行動工具列 */
+  body.drawer-open { overflow: hidden; }            /* 抽屜開啟時鎖住背景捲動 */
+
+  /* 控制面板 → 左側滑入抽屜 */
+  .controls {
+    position: fixed; top: 0; left: 0; z-index: 60;
+    width: min(88%, 380px); height: 100%;
+    padding: 16px; overflow-y: auto;
+    background: var(--panel-bg);
+    border-right: 1px solid var(--line);
+    box-shadow: 0 0 44px rgba(0,0,0,.6);
+    transform: translateX(-100%);
+    transition: transform .26s ease;
+  }
+  body.drawer-open .controls { transform: translateX(0); }
+  .controls .btn-download { display: none; }        /* 改由底部工具列輸出 */
+
+  .drawer-close {
+    display: block; align-self: flex-end;
+    background: transparent; border: 1px solid var(--line); border-radius: 8px;
+    color: var(--muted); padding: 8px 14px; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .drawer-close:hover { color: var(--text); border-color: var(--accent); }
+
+  /* 抽屜背景遮罩 */
+  .drawer-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 50;
+    background: rgba(0,0,0,.55); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  }
+  body.drawer-open .drawer-backdrop { display: block; }
+
+  /* 底部行動工具列 */
+  .mobile-bar {
+    display: flex; gap: 10px;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(12,17,28,.94);
+    border-top: 1px solid var(--line);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  }
+  .mobile-bar button {
+    flex: 1; border: none; border-radius: 10px; padding: 13px;
+    font-size: 15px; font-weight: 800; cursor: pointer; color: #fff;
+  }
+  .mbar-edit { background: var(--accent); }
+  .mbar-export { background: linear-gradient(135deg, var(--accent-2), #ff8c42); }
 }
 
 /* ===== 控制面板 ===== */
@@ -340,8 +390,8 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 
 /* 人物照 */
 .card .person {
-  position: absolute; left: 0; bottom: 0; z-index: 4;   /* 蓋在右側陀螺面板(z-index:3)之上 */
-  width: 60%; height: 94%;
+  position: absolute; left: 0; bottom: 0; z-index: 2;   /* 在面板下方，確保不遮擋陀螺 */
+  width: 45%; height: 94%;                                /* 右緣對齊面板左緣(~45%)，完整顯示不重疊 */
   display: flex; align-items: flex-end; justify-content: flex-start;
 }
 .card .person img {

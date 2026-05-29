@@ -807,6 +807,13 @@ function bindEvents() {
   });
 
   $("btnDownload").addEventListener("click", downloadCard);
+
+  // 手機/平板：設定抽屜開關 + 行動工具列輸出
+  const setDrawer = (open) => document.body.classList.toggle("drawer-open", open);
+  $("btnDrawer").addEventListener("click", () => setDrawer(true));
+  $("btnDrawerClose").addEventListener("click", () => setDrawer(false));
+  $("drawerBackdrop").addEventListener("click", () => setDrawer(false));
+  $("btnExportMobile").addEventListener("click", () => $("btnDownload").click());
   $("btnDuplicate").addEventListener("click", duplicateCard);
   $("btnReset").addEventListener("click", () => {
     if (confirm("確定清空全部卡片並清除暫存？")) { clearState(); location.reload(); }
@@ -825,7 +832,10 @@ function fitStage() {
   // 以 stage 在視窗中的「實際頂端位置」計算可用高度，
   // 自動扣掉上方頂列/分頁列/間距，避免又矮又寬的視窗把卡片頂出畫面（爆版）
   const top = stage.getBoundingClientRect().top;
-  const availH = Math.max(220, window.innerHeight - top - 20);
+  // 手機/平板底部行動工具列會佔位，預留其高度避免卡片被擋
+  const bar = document.getElementById("mobileBar");
+  const barH = bar && getComputedStyle(bar).display !== "none" ? bar.offsetHeight : 0;
+  const availH = Math.max(220, window.innerHeight - top - 20 - barH);
   const scale = Math.min(availW / 1080, availH / cardH, 1);
   stage.style.transform = `scale(${scale})`;
   stage.style.width = `${1080 * scale}px`;
