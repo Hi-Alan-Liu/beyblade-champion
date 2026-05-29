@@ -68,12 +68,7 @@ body {
   body.drawer-open .controls { transform: translateX(0); }
   .controls .btn-download { display: none; }        /* 改由底部工具列輸出 */
 
-  .drawer-close {
-    display: block; align-self: flex-end;
-    background: transparent; border: 1px solid var(--line); border-radius: 8px;
-    color: var(--muted); padding: 8px 14px; font-size: 14px; font-weight: 700; cursor: pointer;
-  }
-  .drawer-close:hover { color: var(--text); border-color: var(--accent); }
+  .drawer-close { display: block; align-self: flex-end; padding: 9px 16px; }
 
   /* 抽屜背景遮罩 */
   .drawer-backdrop {
@@ -129,23 +124,29 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   display: flex; flex-direction: column; gap: 6px;
   font-size: 13px; font-weight: 600; color: var(--muted);
 }
+/* === 統一互動元件外觀：輸入框 / 下拉選單 === */
 .controls input[type="text"],
 .controls select {
-  background: #0e0e13; border: 1px solid var(--line); border-radius: 8px;
-  color: var(--text); padding: 9px 10px; font-size: 14px; font-family: inherit;
+  background: #0e1320; border: 1px solid var(--line); border-radius: 10px;
+  color: var(--text); padding: 10px 12px; font-size: 14px; font-weight: 600; font-family: inherit;
+  transition: border-color .14s, box-shadow .14s, background .14s;
 }
 .controls input[type="text"]:focus,
-.controls select:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+.controls select:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(47,143,230,.18);
+}
 .controls input[type="file"] { font-size: 12px; color: var(--muted); }
 /* 拖放上傳區 */
 .controls label.dropzone {
-  border: 1px dashed transparent; border-radius: 8px; padding: 4px;
+  border: 1px dashed transparent; border-radius: 10px; padding: 4px;
   transition: border-color .12s, background .12s;
 }
 .controls label.dropzone.dragover {
-  border-color: var(--accent); background: rgba(255,255,255,.04);
+  border-color: var(--accent); background: rgba(47,143,230,.08);
 }
 
+/* === 主要 CTA（輸出）：能量橘漸層 === */
 .btn-download {
   background: linear-gradient(135deg, var(--accent-2), #ff8c42);
   color: #fff; border: none; border-radius: 10px;
@@ -153,28 +154,27 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   letter-spacing: 2px; text-transform: uppercase;
   box-shadow: 0 6px 18px rgba(255,106,44,.32);
   position: sticky; top: 0; z-index: 5;
+  transition: filter .14s;
 }
 .btn-download:hover { filter: brightness(1.08); }
 .btn-download:disabled { opacity: .6; cursor: progress; }
-.btn-reset {
-  background: transparent; color: var(--muted); border: 1px solid var(--line);
-  border-radius: 8px; padding: 10px; font-size: 13px; cursor: pointer;
+
+/* === 次要按鈕：統一外觀（複製 Prompt / 複製卡片 / 重設 / 抽屜完成）=== */
+.btn-reset, .btn-dup, .btn-ai-prompt, .drawer-close {
+  background: #0e1320; color: var(--text);
+  border: 1px solid var(--line); border-radius: 10px;
+  padding: 11px 12px; font-size: 13px; font-weight: 700; font-family: inherit;
+  cursor: pointer; text-align: center;
+  transition: border-color .14s, background .14s, color .14s;
 }
-.btn-reset:hover { color: var(--text); border-color: var(--muted); }
+.btn-reset:hover, .btn-dup:hover, .btn-ai-prompt:hover, .drawer-close:hover {
+  border-color: var(--accent); color: #fff; background: rgba(47,143,230,.10);
+}
+.btn-ai-prompt.copied {
+  border-color: var(--accent-2); color: var(--accent-2); background: rgba(255,106,44,.10);
+}
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.btn-dup {
-  background: transparent; color: var(--text); border: 1px solid var(--line);
-  border-radius: 8px; padding: 10px; font-size: 13px; cursor: pointer;
-}
-.btn-dup:hover { border-color: var(--accent); }
 .hint { font-size: 12px; color: var(--muted); margin: -4px 0 2px; }
-.btn-ai-prompt {
-  background: transparent; color: var(--accent); border: 1px solid var(--accent);
-  border-radius: 8px; padding: 9px 12px; font-size: 13px; font-weight: 700; cursor: pointer;
-  text-align: center;
-}
-.btn-ai-prompt:hover { background: rgba(47,143,230,.12); }
-.btn-ai-prompt.copied { color: var(--accent-2); border-color: var(--accent-2); }
 
 /* 動態陀螺控制 */
 .bey-block {
