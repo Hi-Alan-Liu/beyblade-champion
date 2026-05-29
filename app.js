@@ -24,13 +24,6 @@ const SIZES = {
   square: { h: 1080, label: "方形 1:1" },
 };
 
-// ===== 常用零件字典（自動補全；非 DB，可自行增補）=====
-const DICT = {
-  blade:   ["隕星龍騎士", "蒼穹龍騎士", "時鐘幻象", "帝王爆擊", "霜輝銀狼", "鳳凰飛翼", "蒼龍爆刃"],
-  ratchet: ["1-50", "3-60", "5-60", "7-55", "7-70", "8-70", "9-60", "H7-60"],
-  bit:     ["L", "LO", "LR", "E", "H", "K", "R", "FB", "UN", "O", "N"],
-};
-
 // ===== 狀態 =====
 const state = {
   rank: "1",
@@ -56,24 +49,21 @@ function buildBeyControls() {
   rows.innerHTML = "";
 
   for (let i = 0; i < BEY_COUNT; i++) {
-    // --- 左側控制 block ---
+    // --- 左側控制 block：每個部件一個「圖庫選取格」+ 可編輯名稱 ---
     const block = document.createElement("details");
     block.className = "group bey-block";
     block.open = true;
     block.innerHTML = `
       <summary>陀螺 ${i + 1}</summary>
-      <div class="bey-row-fields">
+      <div class="bey-slots">
         ${PART_DEFS.map(
-          (p) => `<label>${p.label}
-            <input type="text" list="dl-${p.key}" data-bey="${i}" data-part="${p.key}" data-kind="name" placeholder="${p.placeholder}" />
-          </label>`
-        ).join("")}
-      </div>
-      <div class="bey-row-files">
-        ${PART_DEFS.map(
-          (p) => `<label>${p.label}圖
-            <input type="file" accept="image/*" data-bey="${i}" data-part="${p.key}" data-kind="img" />
-          </label>`
+          (p) => `<div class="slot" data-bey="${i}" data-part="${p.key}">
+            <button type="button" class="slot-pick" data-bey="${i}" data-part="${p.key}" title="從圖庫選擇${p.label}">
+              <img class="slot-thumb" id="slot-img-${i}-${p.key}" alt="" />
+              <span class="slot-empty" id="slot-empty-${i}-${p.key}">＋ ${p.label}</span>
+            </button>
+            <input type="text" class="slot-name" data-bey="${i}" data-part="${p.key}" data-kind="name" placeholder="${p.label}名稱" />
+          </div>`
         ).join("")}
       </div>
       <div class="preview-name" id="cn-${i}">合併名稱：（待輸入）</div>
@@ -96,61 +86,158 @@ function buildBeyControls() {
   }
 }
 
-// ===== 使用者自訂字典（存 localStorage，與內建合併）=====
-const DICT_KEY = "beyblade-dict-v1";
-let customDict = { blade: [], ratchet: [], bit: [] };
+// ===== 選圖庫 Modal =====
+// 目標格：目前正在選的 (bey, part)，及 blade 時的系統別分頁。
+let galTarget = { bey: 0, part: "blade", system: null };
 
-function loadCustomDict() {
-  try {
-    const d = JSON.parse(localStorage.getItem(DICT_KEY));
-    if (d) ["blade", "ratchet", "bit"].forEach((k) => { customDict[k] = Array.isArray(d[k]) ? d[k] : []; });
-  } catch {}
-}
-function saveCustomDict() {
-  try { localStorage.setItem(DICT_KEY, JSON.stringify(customDict)); } catch {}
-}
-function mergedDict(key) {
-  const seen = new Set();
-  return [...DICT[key], ...customDict[key]].filter((v) => v && !seen.has(v) && seen.add(v));
-}
-function addDictTerm(key, term) {
-  term = (term || "").trim();
-  if (!term || customDict[key].includes(term) || DICT[key].includes(term)) return false;
-  customDict[key].push(term);
-  saveCustomDict();
-  return true;
-}
-function removeDictTerm(key, term) {
-  customDict[key] = customDict[key].filter((v) => v !== term);
-  saveCustomDict();
-}
-
-// ===== 填入自動補全字典（內建 + 自訂）=====
-function populateDatalists() {
-  Object.keys(DICT).forEach((key) => {
-    const dl = $(`dl-${key}`);
-    if (!dl) return;
-    dl.innerHTML = mergedDict(key).map((v) => `<option value="${v}"></option>`).join("");
+function createGalleryModal() {
+  if ($("galleryModal")) return;
+  const m = document.createElement("div");
+  m.id = "galleryModal";
+  m.className = "modal-overlay hidden";
+  m.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3 id="galTitle">選擇零件</h3>
+        <button type="button" class="modal-close" id="galClose" title="關閉">✕</button>
+      </div>
+      <div class="modal-tabs" id="galTabs"></div>
+      <input type="text" class="modal-search" id="galSearch" placeholder="搜尋名稱 / 代碼…" />
+      <div class="modal-hint" id="galHint"></div>
+      <div class="modal-grid" id="galGrid"></div>
+      <div class="modal-foot">
+        <label class="modal-upload">⬆ 自訂上傳
+          <input type="file" accept="image/*" id="galUpload" hidden />
+        </label>
+        <button type="button" class="modal-clear" id="galClear">清除此格</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  $("galClose").addEventListener("click", closeGallery);
+  m.addEventListener("click", (e) => { if (e.target === m) closeGallery(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$("galleryModal").classList.contains("hidden")) closeGallery();
   });
+  $("galSearch").addEventListener("input", renderGalleryGrid);
+  $("galUpload").addEventListener("change", onGalleryUpload);
+  $("galClear").addEventListener("click", () => { clearSlot(galTarget.bey, galTarget.part); closeGallery(); });
 }
 
-// ===== 字典管理 UI =====
-function renderDictManager() {
-  const wrap = $("dictManager");
-  if (!wrap) return;
-  wrap.innerHTML = PART_DEFS.map((p) => `
-    <div class="dict-part" data-key="${p.key}">
-      <h4>${p.label}</h4>
-      <div class="dict-add">
-        <input type="text" placeholder="新增${p.label}名稱" data-dict-input="${p.key}" />
-        <button type="button" data-dict-add="${p.key}">加入</button>
-      </div>
-      <div class="dict-chips">
-        ${DICT[p.key].map((v) => `<span class="chip builtin" title="內建">${v}</span>`).join("")}
-        ${customDict[p.key].map((v) => `<span class="chip">${v}<button type="button" data-dict-rm="${p.key}" data-term="${v}" title="移除">✕</button></span>`).join("")}
-      </div>
-    </div>
-  `).join("");
+function partLabel(part) {
+  const p = PART_DEFS.find((d) => d.key === part);
+  return p ? p.label : part;
+}
+
+function openGallery(bey, part) {
+  if (!BeyDB || !BeyDB.ready) { alert("圖庫尚未載入（assets/db.bundle.js）"); return; }
+  galTarget = { bey: Number(bey), part, system: null };
+  $("galTitle").textContent = "選擇" + partLabel(part);
+  $("galSearch").value = "";
+  $("galHint").textContent = "";
+
+  // 系統別分頁：只有上蓋需要（固鎖/軸心跨系統共用，平鋪即可）
+  const tabsEl = $("galTabs");
+  if (part === "blade") {
+    const systems = BeyDB.systems("blade"); // 例：BX, UX, other（CX 於後續步驟加入）
+    galTarget.system = systems[0] || null;
+    const label = (s) => (s === "other" ? "其他" : s);
+    tabsEl.innerHTML = systems.map((s) => `<button type="button" class="gtab" data-sys="${s}">${label(s)}</button>`).join("");
+    tabsEl.hidden = false;
+    tabsEl.querySelectorAll(".gtab").forEach((b) =>
+      b.addEventListener("click", () => { galTarget.system = b.dataset.sys; markActiveTab(); renderGalleryGrid(); })
+    );
+    markActiveTab();
+  } else {
+    tabsEl.innerHTML = "";
+    tabsEl.hidden = true;
+  }
+  renderGalleryGrid();
+  $("galleryModal").classList.remove("hidden");
+  $("galSearch").focus();
+}
+
+function markActiveTab() {
+  document.querySelectorAll("#galTabs .gtab").forEach((b) =>
+    b.classList.toggle("active", b.dataset.sys === galTarget.system)
+  );
+}
+
+function closeGallery() { $("galleryModal").classList.add("hidden"); }
+
+function renderGalleryGrid() {
+  const grid = $("galGrid");
+  const q = $("galSearch").value;
+  let items = BeyDB.search(galTarget.part, q);
+  if (galTarget.part === "blade" && galTarget.system) {
+    items = items.filter((e) => e.system === galTarget.system);
+  }
+  grid.innerHTML =
+    items
+      .map(
+        (e) => `<button type="button" class="gitem${e.fused ? " fused" : ""}" data-key="${e.key}" title="${(e.desc || "").replace(/"/g, "&quot;")}">
+          <img src="${e.img}" loading="lazy" alt="${e.name}" />
+          <span class="gitem-name">${e.name}</span>
+          <span class="gitem-key">${e.key}${e.fused ? " · 合體" : ""}</span>
+        </button>`
+      )
+      .join("") || `<p class="modal-empty">查無結果</p>`;
+  grid.querySelectorAll(".gitem").forEach((b) =>
+    b.addEventListener("click", () => pickGalleryEntry(BeyDB.get(galTarget.part, b.dataset.key)))
+  );
+}
+
+function pickGalleryEntry(entry) {
+  if (!entry) return;
+  const { bey, part } = galTarget;
+  // 上蓋用中文顯示名；固鎖/軸心用代碼（與合併名稱「隕星龍騎士8-70L」格式一致）
+  const name = part === "blade" ? entry.name : entry.key;
+  setPartData(bey, part, { source: "gallery", key: entry.key, group: entry.system, name, img: entry.img });
+  // fused 上蓋提示：合體型固鎖含軸心，軸心可留空
+  if (part === "blade" && entry.fused) {
+    $("galHint") && ($("galHint").textContent = "此為合體型上蓋（固鎖/軸心可留空）");
+  }
+  closeGallery();
+}
+
+function onGalleryUpload(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const { bey, part } = galTarget;
+  const prevName = (cards[active] && cards[active].beys[bey] && cards[active].beys[bey][part] && cards[active].beys[bey][part].name) || "";
+  readImage(f, (url) => {
+    setPartData(bey, part, { source: "upload", key: "", group: "", name: prevName, img: url });
+    closeGallery();
+  });
+  e.target.value = "";
+}
+
+// ===== 部件資料的單一更新入口（模型 + 畫面同步）=====
+function setPartData(i, part, data) {
+  const d = normalizePart(data);
+  if (cards[active]) cards[active].beys[i][part] = d;
+  if (state.beys[i]) state.beys[i][part] = d;
+  const inp = nameInput(i, part);
+  if (inp) inp.value = d.name;
+  setImg($(`img-${i}-${part}`), $(`ph-${i}-${part}`), d.img); // 右側分開零件預覽
+  renderSlot(i, part);                                         // 左側控制格縮圖
+  renderBeyName(i);
+  saveState();
+}
+
+function clearSlot(i, part) { setPartData(i, part, blankPart()); }
+
+// 更新左側控制格的縮圖 / 空狀態 / 名稱
+function renderSlot(i, part) {
+  const d = (cards[active] && cards[active].beys[i] && cards[active].beys[i][part]) ||
+            (state.beys[i] && state.beys[i][part]) || blankPart();
+  const thumb = $(`slot-img-${i}-${part}`);
+  const empty = $(`slot-empty-${i}-${part}`);
+  if (thumb) {
+    if (d.img) { thumb.src = d.img; thumb.style.display = "block"; if (empty) empty.style.display = "none"; }
+    else { thumb.removeAttribute("src"); thumb.style.display = "none"; if (empty) empty.style.display = "flex"; }
+  }
+  const inp = nameInput(i, part);
+  if (inp && document.activeElement !== inp) inp.value = d.name || "";
 }
 
 // ===== 套用零件圖外框 =====
@@ -346,10 +433,11 @@ function loadCardToDOM(c) {
   (c.beys || []).forEach((b, i) => {
     if (i >= BEY_COUNT) return;
     parts.forEach((p) => {
-      const cell = (b && b[p]) || { name: "", img: "" };
-      state.beys[i][p].name = cell.name || "";
+      const cell = normalizePart(b && b[p]);
+      state.beys[i][p] = cell;
       const inp = nameInput(i, p); if (inp) inp.value = cell.name || "";
       setImg($(`img-${i}-${p}`), $(`ph-${i}-${p}`), cell.img || "");
+      renderSlot(i, p);
     });
     renderBeyName(i);
   });
@@ -532,25 +620,20 @@ function bindEvents() {
     });
   });
 
-  // 動態零件欄位（事件委派）
+  // 名稱輸入（事件委派）：圖庫選取會自動帶入，使用者仍可手動覆寫
   $("beyControls").addEventListener("input", (e) => {
     const t = e.target;
     const i = t.dataset.bey, part = t.dataset.part, kind = t.dataset.kind;
     if (i == null || kind !== "name") return;
-    state.beys[i][part].name = t.value;
+    if (state.beys[i] && state.beys[i][part]) state.beys[i][part].name = t.value;
+    if (cards[active] && cards[active].beys[i] && cards[active].beys[i][part]) cards[active].beys[i][part].name = t.value;
     renderBeyName(i);
   });
-  $("beyControls").addEventListener("change", (e) => {
-    const t = e.target;
-    if (t.dataset.kind !== "img") return;
-    const i = t.dataset.bey, part = t.dataset.part;
-    const f = t.files[0];
-    if (!f) return;
-    readImage(f, (url) => {
-      state.beys[i][part].img = url;
-      setImg($(`img-${i}-${part}`), $(`ph-${i}-${part}`), url);
-      saveState();
-    });
+  // 點圖庫格 → 開選圖庫 Modal
+  $("beyControls").addEventListener("click", (e) => {
+    const btn = e.target.closest(".slot-pick");
+    if (!btn) return;
+    openGallery(btn.dataset.bey, btn.dataset.part);
   });
 
   $("btnDownload").addEventListener("click", downloadCard);
@@ -558,26 +641,6 @@ function bindEvents() {
   $("btnDuplicate").addEventListener("click", duplicateCard);
   $("btnReset").addEventListener("click", () => {
     if (confirm("確定清空全部卡片並清除暫存？")) { clearState(); location.reload(); }
-  });
-
-  // 字典管理（事件委派）
-  $("dictManager").addEventListener("click", (e) => {
-    const addKey = e.target.dataset.dictAdd;
-    const rmKey = e.target.dataset.dictRm;
-    if (addKey) {
-      const input = document.querySelector(`input[data-dict-input="${addKey}"]`);
-      if (addDictTerm(addKey, input.value)) { input.value = ""; renderDictManager(); populateDatalists(); }
-    } else if (rmKey) {
-      removeDictTerm(rmKey, e.target.dataset.term);
-      renderDictManager(); populateDatalists();
-    }
-  });
-  $("dictManager").addEventListener("keydown", (e) => {
-    if (e.key !== "Enter") return;
-    const key = e.target.dataset.dictInput;
-    if (!key) return;
-    e.preventDefault();
-    if (addDictTerm(key, e.target.value)) { e.target.value = ""; renderDictManager(); populateDatalists(); }
   });
 
   // 任一文字/選單/檔案變動 → 自動暫存（圖片於 FileReader 回呼另存）
@@ -669,9 +732,7 @@ async function downloadAll() {
 // ===== 初始化 =====
 function init() {
   buildBeyControls();
-  loadCustomDict();
-  renderDictManager();
-  populateDatalists();
+  createGalleryModal();
   bindEvents();
   enableDrops();
   if (!restoreState()) {            // 沒有暫存 → 開一張空白卡
