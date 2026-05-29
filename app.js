@@ -2,10 +2,10 @@
 
 // ===== 名次設定 =====
 const RANKS = {
-  "1": { accent: "#E10600", line1: "1ST", line2: "PLACE", place: "1st Place" },
-  "2": { accent: "#1455C0", line1: "2ND", line2: "PLACE", place: "2nd Place" },
-  "3": { accent: "#1A9E3E", line1: "3RD", line2: "PLACE", place: "3rd Place" },
-  "4": { accent: "#7A3FD4", line1: "4TH", line2: "PLACE", place: "4th Place" },
+  "1": { accent: "#E10600", color: "#E7C56B", line1: "1ST", line2: "PLACE", place: "1st Place" },
+  "2": { accent: "#1455C0", color: "#C7CCD4", line1: "2ND", line2: "PLACE", place: "2nd Place" },
+  "3": { accent: "#1A9E3E", color: "#C8843C", line1: "3RD", line2: "PLACE", place: "3rd Place" },
+  "4": { accent: "#7A3FD4", color: "#B388E0", line1: "4TH", line2: "PLACE", place: "4th Place" },
 };
 
 // ===== 零件定義（每顆陀螺）=====
@@ -27,7 +27,7 @@ const SIZES = {
 // ===== 狀態 =====
 const state = {
   rank: "1",
-  size: "ig",
+  size: "square",
   shape: "full",
   beys: Array.from({ length: BEY_COUNT }, () => ({
     blade: { name: "", img: null },
@@ -388,7 +388,7 @@ function enableDrops() {
 
 // ===== 套用匯出尺寸 =====
 function applySize() {
-  const s = SIZES[state.size] || SIZES.ig;
+  const s = SIZES[state.size] || SIZES.square;
   document.documentElement.style.setProperty("--card-h", s.h + "px");
   fitStage();
 }
@@ -406,10 +406,11 @@ function renderBeyName(i) {
   $(`cn-${i}`).textContent = "合併名稱：" + (name || "（待輸入）") + (fused ? "　⚠ 合體型：固鎖/軸心可留空" : "");
 }
 
-// ===== 套用名次文字（卡片配色固定為金色典雅風，見 styles.css 的 --gold） =====
+// ===== 套用名次文字與名次色（金銀銅＋紫；其餘維持金色典雅，見 styles.css） =====
 function applyRank() {
   const r = RANKS[state.rank];
   $("rankPlace").textContent = r.place;
+  card.style.setProperty("--rank-color", r.color);
 }
 
 // ===== 圖片上傳：File -> 自動縮放/壓縮 -> dataURL =====
@@ -553,7 +554,7 @@ function normalizePart(p) {
 
 function blankCard(rank) {
   return {
-    title: "", rank: rank || "1", size: "ig", shape: "full",
+    title: "", rank: rank || "1", size: "square", shape: "full",
     logo: "經典賽", nick: "",
     person: "", bg: "",
     beys: [0, 1, 2].map(() => ({
@@ -601,7 +602,7 @@ function readCardFromDOM() {
 function loadCardToDOM(c) {
   c = c || blankCard();
   $("rankSelect").value = c.rank || "1"; state.rank = c.rank || "1";
-  $("sizeSelect").value = c.size || "ig"; state.size = c.size || "ig";
+  $("sizeSelect").value = c.size || "square"; state.size = c.size || "square";
   state.shape = "full";
   $("logoInput").value = c.logo ?? ""; $("logoText").textContent = c.logo ?? "";
   $("nickInput").value = c.nick || ""; $("rankNick").textContent = c.nick || "";
@@ -820,7 +821,7 @@ function bindEvents() {
 // ===== 預覽縮放 =====
 function fitStage() {
   const area = $("previewArea");
-  const cardH = (SIZES[state.size] || SIZES.ig).h;
+  const cardH = (SIZES[state.size] || SIZES.square).h;
   const availW = area.clientWidth - 4;
   // 以 stage 在視窗中的「實際頂端位置」計算可用高度，
   // 自動扣掉上方頂列/分頁列/間距，避免又矮又寬的視窗把卡片頂出畫面（爆版）
@@ -834,7 +835,7 @@ function fitStage() {
 
 // ===== 下載 PNG =====
 async function exportCurrentDataURL() {
-  const cardH = (SIZES[state.size] || SIZES.ig).h;
+  const cardH = (SIZES[state.size] || SIZES.square).h;
   return window.htmlToImage.toPng(card, {
     pixelRatio: 2,               // 2x 高解析度
     width: 1080, height: cardH,
