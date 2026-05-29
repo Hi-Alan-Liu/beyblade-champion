@@ -14,6 +14,11 @@
 
   const RAW = global.BEY_DB_BUNDLE || null;
   const IMG_BASE = "assets/img";
+  // 實際存在的圖片集合（相對 img 的 posix 路徑），用來濾掉沒圖檔的 DB 條目
+  const IMG_SET = new Set((RAW && RAW.__images) || []);
+  function imgExists(relFromImgBase) {
+    return IMG_SET.size === 0 || IMG_SET.has(relFromImgBase); // 無清單時不過濾（保險）
+  }
 
   // meta.json 是陣列：[{general}, {glossary}, {search}]
   const META_GENERAL = (RAW && Array.isArray(RAW.meta) && RAW.meta[0] && RAW.meta[0].general) || {};
@@ -88,10 +93,12 @@
       return (META_GENERAL.part && META_GENERAL.part.names) || {};
     },
 
-    /** 列出某部件類型全部條目（blade/ratchet/bit），已標準化 */
+    /** 列出某部件類型全部條目（blade/ratchet/bit），已標準化；濾掉沒圖檔的 */
     list(partType) {
       const dict = rawDict(partType);
-      return Object.keys(dict).map((key) => makeEntry(partType, key, dict[key]));
+      return Object.keys(dict)
+        .filter((key) => imgExists(`${partType}/${key}.png`))
+        .map((key) => makeEntry(partType, key, dict[key]));
     },
 
     /** 取單一條目 */
@@ -142,7 +149,7 @@
     cxList(component) {
       const divided = (RAW && RAW["part-blade-divided"] && RAW["part-blade-divided"].CX) || {};
       const dict = divided[component] || {};
-      return Object.keys(dict).map((key) => {
+      return Object.keys(dict).filter((key) => imgExists(`blade/CX/${component}/${key}.png`)).map((key) => {
         const raw = dict[key];
         const n = (raw && raw.names) || {};
         return {

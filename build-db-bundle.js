@@ -16,7 +16,20 @@ const fs = require("fs");
 const path = require("path");
 
 const DB_DIR = path.join(__dirname, "assets", "db");
+const IMG_DIR = path.join(__dirname, "assets", "img");
 const OUT = path.join(__dirname, "assets", "db.bundle.js");
+
+// 走訪 assets/img，回傳所有圖片的相對 posix 路徑（例 "bit/A.png"、"blade/CX/chip/Dr.png"）
+function walkImages(dir, base, acc) {
+  base = base || dir; acc = acc || [];
+  if (!fs.existsSync(dir)) return acc;
+  for (const name of fs.readdirSync(dir)) {
+    const full = path.join(dir, name);
+    if (fs.statSync(full).isDirectory()) walkImages(full, base, acc);
+    else if (/\.(png|jpg|jpeg|svg)$/i.test(name)) acc.push(path.relative(base, full).split(path.sep).join("/"));
+  }
+  return acc;
+}
 
 function build() {
   if (!fs.existsSync(DB_DIR)) {
@@ -35,13 +48,16 @@ function build() {
       process.exit(1);
     }
   }
+  // 圖片清單（讓 BeyDB 過濾掉「DB 有資料但沒圖檔」的條目，避免 404 與壞圖）
+  bundle.__images = walkImages(IMG_DIR);
+
   const header =
-    "/* 自動產生，請勿手改。來源：assets/db/*.json。重新產生：node build-db-bundle.js */\n";
+    "/* 自動產生，請勿手改。來源：assets/db/*.json + assets/img。重新產生：node build-db-bundle.js */\n";
   const body = "window.BEY_DB_BUNDLE = " + JSON.stringify(bundle) + ";\n";
   fs.writeFileSync(OUT, header + body, "utf8");
   const kb = (Buffer.byteLength(body, "utf8") / 1024).toFixed(1);
-  console.log(`已產生 ${path.relative(__dirname, OUT)}（${files.length} 個 JSON，${kb} KB）`);
-  console.log("包含：" + Object.keys(bundle).join(", "));
+  console.log(`已產生 ${path.relative(__dirname, OUT)}（${files.length} 個 JSON，${bundle.__images.length} 張圖，${kb} KB）`);
+  console.log("包含：" + Object.keys(bundle).filter((k) => k !== "__images").join(", "));
 }
 
 build();

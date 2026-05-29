@@ -110,6 +110,7 @@ function createGalleryModal() {
       </div>
       <div class="modal-tabs" id="galTabs"></div>
       <input type="text" class="modal-search" id="galSearch" placeholder="搜尋名稱 / 代碼…" />
+      <select class="modal-select" id="galSelect" hidden></select>
       <div class="modal-hint" id="galHint"></div>
       <div class="modal-grid" id="galGrid"></div>
       <div class="modal-foot">
@@ -126,6 +127,10 @@ function createGalleryModal() {
     if (e.key === "Escape" && !$("galleryModal").classList.contains("hidden")) closeGallery();
   });
   $("galSearch").addEventListener("input", renderGalleryGrid);
+  $("galSelect").addEventListener("change", (e) => {
+    const key = e.target.value;
+    if (key) pickGalleryEntry(BeyDB.get(galTarget.part, key));
+  });
   $("galUpload").addEventListener("change", onGalleryUpload);
   $("galClear").addEventListener("click", () => { clearSlot(galTarget.bey, galTarget.part); closeGallery(); });
 }
@@ -169,6 +174,18 @@ function openGallery(bey, part) {
   $("galSearch").focus();
 }
 
+// 固鎖/軸心的上拉選單：選項=代碼(+名稱)，預選目前值
+function populateGalSelect(items) {
+  const sel = $("galSelect");
+  const label = partLabel(galTarget.part);
+  const cur = (state.beys[galTarget.bey] && state.beys[galTarget.bey][galTarget.part] && state.beys[galTarget.bey][galTarget.part].key) || "";
+  sel.innerHTML =
+    `<option value="">— 選擇${label} —</option>` +
+    items
+      .map((e) => `<option value="${e.key}"${e.key === cur ? " selected" : ""}>${e.key}${e.name && e.name !== e.key ? " — " + e.name : ""}</option>`)
+      .join("");
+}
+
 function markActiveTab() {
   document.querySelectorAll("#galTabs .gtab").forEach((b) =>
     b.classList.toggle("active", b.dataset.sys === galTarget.system)
@@ -183,6 +200,7 @@ function renderGalleryGrid() {
   // CX 拆解：走子部件組裝流程
   if (galTarget.part === "blade" && galTarget.system === "CX") {
     $("galSearch").style.display = "none";
+    $("galSelect").hidden = true;
     renderCxBuilder();
     return;
   }
@@ -192,6 +210,10 @@ function renderGalleryGrid() {
   if (galTarget.part === "blade" && galTarget.system) {
     items = items.filter((e) => e.system === galTarget.system);
   }
+  // 固鎖/軸心：提供原生上拉選單（與搜尋/縮圖並存）；上蓋走視覺挑選不用下拉
+  const useDropdown = galTarget.part === "ratchet" || galTarget.part === "bit";
+  $("galSelect").hidden = !useDropdown;
+  if (useDropdown) populateGalSelect(items);
   grid.innerHTML =
     items
       .map(
@@ -237,8 +259,9 @@ function startCxDraft() {
 function renderCxBuilder() {
   const grid = $("galGrid");
   grid.classList.add("cx-mode");
-  const names = BeyDB.partNames();
-  const compName = (c) => (names[c] && names[c].chi ? names[c].chi.split(/\s+/)[0] : c);
+  // CX 子部件中文標籤（對齊 beybladehub 與使用者用語：Main Blade=鋼鐵戰刃）
+  const CX_LABEL = { chip: "紋章鎖", main: "主刃／鋼鐵戰刃", assist: "輔助戰刃", metal: "金屬刃", over: "超越刃" };
+  const compName = (c) => CX_LABEL[c] || c;
   const comps = BeyDB.cxComponents(cxDraft.mode);
   grid.innerHTML = `
     <div class="cx-modebar">
