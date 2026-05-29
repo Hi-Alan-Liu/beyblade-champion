@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>陀螺配置卡片產生器</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>陀螺配置卡片產生器</h1>
+    <span class="topbar-sub">Beyblade Ranking Card Generator</span>
+  </header>
+
+  <main class="layout">
+    <!-- 左：控制面板 -->
+    <section class="controls" id="controls">
+      <button class="btn-download" id="btnDownload">⬇ 下載目前卡片 PNG</button>
+      <button class="btn-download-all" id="btnDownloadAll">⬇⬇ 匯出全部卡片</button>
+
+      <details class="group" open>
+        <summary>名次與文字</summary>
+        <label>匯出尺寸
+          <select id="sizeSelect">
+            <option value="ig">IG 貼文 4:5（1080×1350）</option>
+            <option value="story">限動 9:16（1080×1920）</option>
+            <option value="square">方形 1:1（1080×1080）</option>
+          </select>
+        </label>
+        <label>名次
+          <select id="rankSelect">
+            <option value="1">1ST PLACE（紅）</option>
+            <option value="2">2ND PLACE（藍）</option>
+            <option value="3">3RD PLACE（綠）</option>
+            <option value="4">4TH PLACE（紫）</option>
+          </select>
+        </label>
+        <label>LOGO 文字
+          <input type="text" id="logoInput" value="HANIK TRACK" />
+        </label>
+        <label>暱稱 / 副標（選填）
+          <input type="text" id="nickInput" placeholder="例：選手暱稱" />
+        </label>
+        <label>右下浮水印
+          <input type="text" id="watermarkInput" value="高雄漢諡" />
+        </label>
+        <label>零件圖呈現
+          <select id="shapeSelect">
+            <option value="full">完整（不裁切）</option>
+            <option value="rounded">圓角方框</option>
+            <option value="circle">圓框</option>
+          </select>
+        </label>
+      </details>
+
+      <details class="group" open>
+        <summary>圖片</summary>
+        <label>人物照片
+          <input type="file" id="personFile" accept="image/*" />
+        </label>
+        <label>右側面板背景（選填）
+          <input type="file" id="bgFile" accept="image/*" />
+        </label>
+      </details>
+
+      <!-- 3 顆陀螺的控制項由 app.js 動態產生 -->
+      <div id="beyControls"></div>
+
+      <details class="group">
+        <summary>常用字典（自動補全）</summary>
+        <p class="hint">把常用零件名加進來，輸入時就會出現在下拉建議。</p>
+        <div id="dictManager"></div>
+      </details>
+
+      <div class="row-2">
+        <button class="btn-dup" id="btnDuplicate">⧉ 複製目前卡片</button>
+        <button class="btn-reset" id="btnReset">清空重設</button>
+      </div>
+    </section>
+
+    <!-- 右：卡片預覽 -->
+    <section class="preview" id="previewArea">
+      <div class="card-tabs" id="cardTabs"></div>
+      <div class="stage" id="stage">
+        <div class="card" id="card">
+          <div class="logo" id="logoText">HANIK TRACK</div>
+
+          <div class="person" id="personWrap">
+            <img id="personImg" alt="" />
+          </div>
+
+          <div class="rank">
+            <div class="rank-line line1" id="rankLine1">1ST</div>
+            <div class="rank-line line2" id="rankLine2">PLACE</div>
+            <div class="rank-nick" id="rankNick"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-bg" id="panelBg"></div>
+            <div class="rows" id="rows"></div>
+          </div>
+
+          <div class="watermark" id="watermarkText">高雄漢諡</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 自動補全字典（常用零件名，可自行增補） -->
+  <datalist id="dl-blade"></datalist>
+  <datalist id="dl-ratchet"></datalist>
+  <datalist id="dl-bit"></datalist>
+
+  <!-- 離線優先：先載本機版，失敗才退回 CDN -->
+  <script src="vendor/html-to-image.js"></script>
+  <script>
+    if (!window.htmlToImage) {
+      document.write('<script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"><\/script>');
+    }
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>

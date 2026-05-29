@@ -1,0 +1,31 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 編輯器 / IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# 記錄 / 暫存
+*.log
+.cache/
+tmp/
+temp/
+
+# 相依套件（本專案無建置，但保留以防未來加入）
+node_modules/
+
+# 工具產生物（Claude Code / gstack browse 的暫存與日誌，非專案內容）
+.claude/
+.gstack/
+
+# 產生的輸出圖（使用者匯出的卡片不入庫）
+*.png
+*.jpg
+*.jpeg
+!範例*.png
+
+# 注意：vendor/html-to-image.js 為離線必要檔，務必入庫（不忽略）

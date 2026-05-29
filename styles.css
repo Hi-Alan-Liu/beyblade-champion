@@ -1,0 +1,337 @@
+/* ===== 全域 ===== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #E10600;          /* 名次主色，JS 會切換 */
+  --card-h: 1350px;           /* 卡片高度，隨匯出尺寸切換 */
+  --bg: #14141a;
+  --panel-bg: #1c1c24;
+  --line: #2c2c38;
+  --text: #e8e8ee;
+  --muted: #8a8a98;
+}
+body {
+  font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;          /* 消除水平捲軸 */
+}
+/* 細緻、配主題的捲軸（僅頁面層級，無內部捲動區） */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #2c2c38; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a48; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ===== 頂列 ===== */
+.topbar {
+  display: flex; align-items: baseline; gap: 12px;
+  padding: 16px 24px; border-bottom: 1px solid var(--line);
+}
+.topbar h1 { font-size: 20px; font-weight: 800; }
+.topbar-sub { font-size: 13px; color: var(--muted); }
+
+/* ===== 版面 ===== */
+.layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  padding: 24px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .preview { order: -1; }
+}
+
+/* ===== 控制面板 ===== */
+.controls {
+  display: flex; flex-direction: column; gap: 14px;
+  min-width: 0;            /* 允許格線收縮，避免水平溢出 */
+}
+/* 收合區塊（details/summary） */
+.group {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 14px;
+}
+details.group { padding: 0; }                 /* 收合時 summary 自帶 padding */
+details.group > summary {
+  cursor: pointer; list-style: none; user-select: none;
+  padding: 12px 14px; font-size: 13px; font-weight: 800; color: var(--accent);
+  display: flex; align-items: center; gap: 8px;
+}
+details.group > summary::-webkit-details-marker { display: none; }
+details.group > summary::before {
+  content: "▸"; color: var(--muted); transition: transform .15s;
+}
+details.group[open] > summary::before { transform: rotate(90deg); }
+details.group > summary ~ * { margin: 0 14px 12px; }
+details.group > summary ~ *:last-child { margin-bottom: 14px; }
+.group legend { padding: 0 8px; font-size: 13px; font-weight: 700; color: var(--accent); }
+.controls label {
+  display: flex; flex-direction: column; gap: 6px;
+  font-size: 13px; font-weight: 600; color: var(--muted);
+}
+.controls input[type="text"],
+.controls select {
+  background: #0e0e13; border: 1px solid var(--line); border-radius: 8px;
+  color: var(--text); padding: 9px 10px; font-size: 14px; font-family: inherit;
+}
+.controls input[type="text"]:focus,
+.controls select:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+.controls input[type="file"] { font-size: 12px; color: var(--muted); }
+/* 拖放上傳區 */
+.controls label.dropzone {
+  border: 1px dashed transparent; border-radius: 8px; padding: 4px;
+  transition: border-color .12s, background .12s;
+}
+.controls label.dropzone.dragover {
+  border-color: var(--accent); background: rgba(255,255,255,.04);
+}
+
+.btn-download {
+  background: var(--accent); color: #fff; border: none; border-radius: 10px;
+  padding: 14px; font-size: 16px; font-weight: 800; cursor: pointer;
+  position: sticky; top: 0; z-index: 5;
+}
+.btn-download:hover { filter: brightness(1.1); }
+.btn-download:disabled { opacity: .6; cursor: progress; }
+.btn-reset {
+  background: transparent; color: var(--muted); border: 1px solid var(--line);
+  border-radius: 8px; padding: 10px; font-size: 13px; cursor: pointer;
+}
+.btn-reset:hover { color: var(--text); border-color: var(--muted); }
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-dup {
+  background: transparent; color: var(--text); border: 1px solid var(--line);
+  border-radius: 8px; padding: 10px; font-size: 13px; cursor: pointer;
+}
+.btn-dup:hover { border-color: var(--accent); }
+.hint { font-size: 12px; color: var(--muted); margin: -4px 0 2px; }
+
+/* 字典管理 */
+.dict-part { margin-bottom: 10px; }
+.dict-part h4 { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.dict-add { display: flex; gap: 6px; }
+.dict-add input { flex: 1; }
+.dict-add button {
+  background: var(--accent); color: #fff; border: none; border-radius: 8px;
+  padding: 0 12px; font-size: 13px; cursor: pointer;
+}
+.dict-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.dict-chips .chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #0e0e13; border: 1px solid var(--line); border-radius: 999px;
+  padding: 3px 8px; font-size: 12px; color: var(--text);
+}
+.dict-chips .chip button {
+  border: none; background: transparent; color: var(--muted); cursor: pointer;
+  font-size: 13px; line-height: 1; padding: 0;
+}
+.dict-chips .chip button:hover { color: var(--accent); }
+.dict-chips .chip.builtin { opacity: .55; }
+
+/* 動態陀螺控制 */
+.bey-block {
+  border: 1px solid var(--line); border-radius: 12px; padding: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.bey-block h3 { font-size: 13px; font-weight: 800; color: var(--accent); }
+.bey-block .preview-name {
+  font-size: 12px; color: var(--muted); word-break: break-all;
+  background: #0e0e13; border-radius: 6px; padding: 6px 8px;
+}
+.bey-row-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.bey-row-fields label { font-size: 12px; }
+.bey-row-files { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+/* ===== 預覽舞台 ===== */
+.preview {
+  position: sticky; top: 24px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  min-width: 0;            /* 允許收縮，避免水平溢出 */
+}
+.stage { max-width: 100%; }
+/* 卡片分頁 */
+.card-tabs {
+  display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+  width: 100%;
+}
+.card-tabs .tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #0e0e13; border: 1px solid var(--line); border-radius: 8px;
+  color: var(--muted); padding: 6px 10px; font-size: 13px; cursor: pointer;
+}
+.card-tabs .tab.active { color: #fff; border-color: var(--accent); background: rgba(255,255,255,.04); }
+.card-tabs .tab.dragging { opacity: .5; }
+.card-tabs .tab[draggable="true"] { cursor: grab; }
+.card-tabs .tab .tab-del {
+  border: none; background: transparent; color: var(--muted); cursor: pointer;
+  font-size: 14px; line-height: 1; padding: 0 2px;
+}
+.card-tabs .tab .tab-del:hover { color: var(--accent); }
+.card-tabs .tab-add {
+  background: transparent; border: 1px dashed var(--line); border-radius: 8px;
+  color: var(--muted); padding: 6px 12px; font-size: 13px; cursor: pointer;
+}
+.card-tabs .tab-add:hover { color: #fff; border-color: var(--accent); }
+
+.btn-download-all {
+  background: transparent; color: var(--text); border: 1px solid var(--accent);
+  border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.btn-download-all:hover { background: rgba(255,255,255,.05); }
+.btn-download-all:disabled { opacity: .6; cursor: progress; }
+.stage {
+  transform-origin: top center;
+  /* JS 設定 transform: scale() 與容器尺寸 */
+  box-shadow: 0 0 0 1px var(--line), 0 24px 60px rgba(0,0,0,.6); /* B3：預覽卡片邊界 */
+  border-radius: 4px;
+}
+
+/* ===== 卡片本體 (1080×1350) ===== */
+.card {
+  position: relative;
+  width: 1080px; height: var(--card-h);
+  background: var(--bg);
+  overflow: hidden;
+  color: #fff;
+  font-family: "Arial Black", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+}
+
+/* LOGO */
+.card .logo {
+  position: absolute; top: 36px; left: 44px; z-index: 4;
+  font-size: 30px; font-weight: 800; font-style: italic;
+  letter-spacing: 1px; color: var(--accent);
+  text-transform: uppercase;
+}
+
+/* 人物照 */
+.card .person {
+  position: absolute; left: 0; bottom: 0; z-index: 2;
+  width: 50%; height: 86%;
+  display: flex; align-items: flex-end; justify-content: flex-start;
+}
+.card .person img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain; object-position: left bottom;
+  display: none;
+}
+
+/* 名次大字 */
+.card .rank {
+  position: absolute; left: 40px; bottom: 40px; z-index: 5;
+  line-height: .92;
+}
+.card .rank-line {
+  font-weight: 900; font-style: italic; color: var(--accent);
+  -webkit-text-stroke: 4px #fff;
+  paint-order: stroke fill;
+  text-shadow: 0 6px 14px rgba(0,0,0,.45);
+  text-transform: uppercase;
+}
+.card .rank-line.line1 { font-size: 150px; }
+.card .rank-line.line2 { font-size: 118px; }
+.card .rank-nick {
+  margin-top: 10px; font-size: 30px; font-weight: 800; font-style: italic;
+  color: #fff; -webkit-text-stroke: 0; letter-spacing: 1px;
+}
+
+/* 右側面板 */
+.card .panel {
+  position: absolute; top: 150px; bottom: 140px; right: 36px; z-index: 3;
+  width: 560px;            /* 高度由 top/bottom 錨定，隨卡片高度伸縮 */
+  border-radius: 28px; overflow: hidden;
+  background: rgba(20,20,26,.92);
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 20px 50px rgba(0,0,0,.5);
+  padding: 26px 26px 26px 30px;
+}
+.card .panel-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background-size: cover; background-position: center;
+  opacity: .35;
+}
+/* 面板光澤/深度：頂部微高光、底部加深，提升質感 */
+.card .panel::after {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 22%, rgba(0,0,0,.28));
+}
+.card .rows {
+  position: relative; z-index: 1;
+  height: 100%;
+  display: grid; grid-template-rows: 1fr 1fr 1fr; gap: 0;
+}
+
+/* 每顆陀螺一列 */
+.card .bey-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.25fr 1fr .85fr;
+  grid-template-rows: 1fr auto;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 6px 14px 22px;
+  border-bottom: 1px dashed rgba(255,255,255,.12);
+}
+.card .bey-row:last-child { border-bottom: none; }
+/* 左緣連接圓點 */
+.card .bey-row::before {
+  content: ""; position: absolute; left: 0; top: 50%;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--accent); transform: translateY(-50%);
+  box-shadow: 0 0 0 4px rgba(255,255,255,.12);
+}
+.card .part {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; max-height: 230px;     /* 隨列高伸縮，9:16 也填得滿 */
+}
+.card .part img {
+  max-width: 100%; max-height: 100%; object-fit: contain; display: none;
+}
+/* 零件圖裁切外框 */
+.card[data-shape="rounded"] .part img {
+  width: 88%; height: 88%; max-width: none; max-height: none;
+  object-fit: cover; border-radius: 18px;
+  border: 2px solid rgba(255,255,255,.14);
+}
+.card[data-shape="circle"] .part img {
+  width: 130px; height: 130px;        /* 正方形 → 正圓（不受窄欄寬度壓成橢圓）*/
+  max-width: 100%; max-height: none;
+  object-fit: cover; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.18);
+}
+.card .part .ph {
+  font-size: 18px; color: rgba(255,255,255,.28); font-weight: 700;
+  border: 2px dashed rgba(255,255,255,.18); border-radius: 10px;
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+}
+.card .bey-name {
+  grid-column: 1 / -1;
+  text-align: right;
+  font-size: 32px; font-weight: 800; color: #fff;
+  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  padding-right: 4px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+}
+.card .bey-name::before {
+  content: ""; width: 13px; height: 26px;
+  border: 3px solid var(--accent); border-right: none;
+  border-radius: 3px 0 0 3px;        /* 「[」規格括號感，對齊參考圖 */
+}
+/* B1：無名稱時不顯示三角刻度 */
+.card .bey-name:empty::before { display: none; }
+
+/* 浮水印 */
+.card .watermark {
+  position: absolute; right: 40px; bottom: 30px; z-index: 6;
+  background: var(--accent); color: #fff;
+  font-size: 30px; font-weight: 800;
+  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  padding: 6px 16px; border-radius: 6px;
+  transform: rotate(-2deg);
+  box-shadow: 0 6px 16px rgba(0,0,0,.4);
+}
