@@ -17,6 +17,31 @@ const PART_DEFS = [
 
 const BEY_COUNT = 3;
 
+// ===== 人物去背 AI Prompt（供「複製 AI 去背 Prompt」按鈕使用）=====
+const AI_PERSON_PROMPT =
+`請幫我將這張人物照片去背，處理成可放進「戰鬥陀螺排名卡片」的人物素材：
+1. 完整移除背景，只保留人物主體，輸出為背景全透明的 PNG。
+2. 保留完整人物，頭頂、手部與腳部都不要被裁切。
+3. 邊緣乾淨自然、髮絲俐落，不留任何原背景殘影或陰影。
+4. 不要替換成其他背景，背景必須是全透明。
+5. 人物會放在卡片左側的人物區、疊在深色卡片背景上，請以直立站姿、置中、底部對齊輸出。`;
+
+// 複製文字到剪貼簿：先試 Clipboard API，失敗則退回 execCommand（兼容無焦點/權限受限環境）
+async function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    try { await navigator.clipboard.writeText(text); return; } catch (e) { /* 退回 execCommand */ }
+  }
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed"; ta.style.top = "-9999px"; ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+  document.body.removeChild(ta);
+  if (!ok) throw new Error("copy failed");
+}
+
 // ===== 匯出尺寸（寬固定 1080）=====
 const SIZES = {
   ig:     { h: 1350, label: "IG 4:5" },
@@ -814,6 +839,19 @@ function bindEvents() {
   $("btnDrawerClose").addEventListener("click", () => setDrawer(false));
   $("drawerBackdrop").addEventListener("click", () => setDrawer(false));
   $("btnExportMobile").addEventListener("click", () => $("btnDownload").click());
+
+  // 複製人物去背 AI Prompt
+  $("btnCopyPrompt").addEventListener("click", async () => {
+    const btn = $("btnCopyPrompt");
+    const old = btn.textContent;
+    try {
+      await copyText(AI_PERSON_PROMPT);
+      btn.textContent = "✓ 已複製到剪貼簿"; btn.classList.add("copied");
+    } catch (e) {
+      btn.textContent = "✕ 複製失敗，請手動選取"; console.error(e);
+    }
+    setTimeout(() => { btn.textContent = old; btn.classList.remove("copied"); }, 1800);
+  });
   $("btnDuplicate").addEventListener("click", duplicateCard);
   $("btnReset").addEventListener("click", () => {
     if (confirm("確定清空全部卡片並清除暫存？")) { clearState(); location.reload(); }
