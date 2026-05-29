@@ -543,7 +543,10 @@ function fitStage() {
   const area = $("previewArea");
   const cardH = (SIZES[state.size] || SIZES.ig).h;
   const availW = area.clientWidth - 4;
-  const availH = window.innerHeight - 80;          // 高度也納入，避免長圖超出視窗
+  // 以 stage 在視窗中的「實際頂端位置」計算可用高度，
+  // 自動扣掉上方頂列/分頁列/間距，避免又矮又寬的視窗把卡片頂出畫面（爆版）
+  const top = stage.getBoundingClientRect().top;
+  const availH = Math.max(220, window.innerHeight - top - 20);
   const scale = Math.min(availW / 1080, availH / cardH, 1);
   stage.style.transform = `scale(${scale})`;
   stage.style.width = `${1080 * scale}px`;
