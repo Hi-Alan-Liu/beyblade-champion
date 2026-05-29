@@ -212,11 +212,10 @@ function pickGalleryEntry(entry) {
   const { bey, part } = galTarget;
   // 上蓋用中文顯示名；固鎖/軸心用代碼（與合併名稱「隕星龍騎士8-70L」格式一致）
   const name = part === "blade" ? entry.name : entry.key;
-  setPartData(bey, part, { source: "gallery", key: entry.key, group: entry.system, name, img: entry.img });
-  // fused 上蓋提示：合體型固鎖含軸心，軸心可留空
-  if (part === "blade" && entry.fused) {
-    $("galHint") && ($("galHint").textContent = "此為合體型上蓋（固鎖/軸心可留空）");
-  }
+  setPartData(bey, part, {
+    source: "gallery", key: entry.key, group: entry.system, name, img: entry.img,
+    fused: part === "blade" ? !!entry.fused : false,
+  });
   closeGallery();
 }
 
@@ -381,7 +380,8 @@ function renderBeyName(i) {
   const bey = state.beys[i];
   const name = combinedName(bey);
   $(`name-${i}`).textContent = name;
-  $(`cn-${i}`).textContent = "合併名稱：" + (name || "（待輸入）");
+  const fused = bey.blade && bey.blade.fused;
+  $(`cn-${i}`).textContent = "合併名稱：" + (name || "（待輸入）") + (fused ? "　⚠ 合體型：固鎖/軸心可留空" : "");
 }
 
 // ===== 套用名次配色與文字 =====
@@ -508,6 +508,39 @@ function renderPart(i, part) {
   if (part === "blade") renderBlade(i, d);
   else setPartImage(i, part, d.img);
   renderSlot(i, part);
+  layoutAssembly(i); // 依現有層動態排版，空層自動跳過、上下接合不留洞
+}
+
+// 某部件是否有可顯示的圖（CX 上蓋看是否有子部件圖）
+function hasPartImage(i, part) {
+  const d = state.beys[i] && state.beys[i][part];
+  if (!d) return false;
+  if (part === "blade" && d.cx) return cxOrderedComps(d).length > 0;
+  return !!d.img;
+}
+
+// 組裝合成的動態排版：只排有圖的層，依序堆疊重疊並整體垂直置中。
+// 解決「合體型(fused)留空固鎖/軸心」或任一層留空時的空洞問題。
+const ASM_H = { blade: 0.52, ratchet: 0.36, bit: 0.36 }; // 各層高度（佔組裝區比例）
+const ASM_OVERLAP = 0.13;                                 // 相鄰層重疊量
+function layoutAssembly(i) {
+  const order = ["blade", "ratchet", "bit"];
+  const present = order.filter((p) => hasPartImage(i, p));
+  let total = 0;
+  present.forEach((p, idx) => { total += ASM_H[p]; if (idx > 0) total -= ASM_OVERLAP; });
+  let cursor = Math.max(0, (1 - total) / 2); // 整體垂直置中
+  present.forEach((p) => {
+    const el = $(`comp-${i}-${p}`);
+    if (el) {
+      el.style.top = (cursor * 100).toFixed(1) + "%";
+      el.style.height = (ASM_H[p] * 100).toFixed(1) + "%";
+      el.style.display = "block";
+    }
+    cursor += ASM_H[p] - ASM_OVERLAP;
+  });
+  order.filter((p) => !present.includes(p)).forEach((p) => {
+    const el = $(`comp-${i}-${p}`); if (el) el.style.display = "none";
+  });
 }
 
 function imgSrc(i, part) {
@@ -539,6 +572,7 @@ function normalizePart(p) {
     group: p.group || "",
     name: p.name || "",
     img: p.img || "",
+    fused: !!p.fused, // 合體型上蓋（固鎖/軸心可留空）
   };
   // CX 拆解上蓋：無單一圖，由子部件 comps 組成（{component:{key,img,name}}）
   if (p.cx) {
