@@ -8,6 +8,8 @@
   --line: #2c2c38;
   --text: #e8e8ee;
   --muted: #8a8a98;
+  --gold: #E7C56B;            /* 卡片金色典雅主色 */
+  --gold-deep: #B0801F;       /* 金色描邊/陰影用深色 */
 }
 body {
   font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
@@ -313,14 +315,30 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   font-family: "Arial Black", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
 }
 
-/* LOGO */
-.card .logo {
-  position: absolute; top: 34px; left: 44px; z-index: 6;
-  font-size: 34px; font-weight: 900; font-style: italic;
-  letter-spacing: .5px; color: var(--accent);
-  text-transform: none;
-  -webkit-text-stroke: 1.5px rgba(255,255,255,.9); paint-order: stroke fill;
-  text-shadow: 0 3px 10px rgba(0,0,0,.55);
+/* 比賽名稱（置中於上方）＋ 裝飾分隔線 */
+.card .title {
+  position: absolute; top: 34px; left: 0; right: 0; z-index: 6;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  pointer-events: none;
+}
+.card .title-text {
+  font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+  font-size: 78px; font-weight: 900; letter-spacing: 8px; line-height: 1;
+  color: var(--gold);
+  -webkit-text-stroke: 1px var(--gold-deep); paint-order: stroke fill;
+  text-shadow: 0 2px 0 rgba(80,52,8,.5), 0 6px 18px rgba(0,0,0,.6);
+}
+.card .title-divider {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  width: 360px; max-width: 60%;
+}
+.card .title-divider .td-line {
+  flex: 1; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.card .title-divider .td-gem {
+  color: var(--gold); font-size: 18px; line-height: 1;
+  text-shadow: 0 0 8px rgba(231,197,107,.5);
 }
 
 /* 人物照 */
@@ -342,23 +360,25 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   background: radial-gradient(125% 110% at 0% 100%, rgba(0,0,0,.62), rgba(0,0,0,0) 68%);
 }
 .card .rank {
-  position: absolute; left: 40px; bottom: 40px; z-index: 5;
-  line-height: .9;
+  position: absolute; left: 48px; bottom: 56px; z-index: 5;
+  max-width: 58%;
 }
-.card .rank-line {
-  font-weight: 900; font-style: italic; color: var(--accent);
-  -webkit-text-stroke: 6px #fff;
-  paint-order: stroke fill;
-  text-shadow: 0 6px 16px rgba(0,0,0,.6), 0 0 34px rgba(0,0,0,.5);
-  text-transform: uppercase;
+.card .rank-place {
+  font-family: "Noto Serif TC", "Georgia", serif;
+  font-size: 58px; font-weight: 800; font-style: italic;
+  color: var(--gold); letter-spacing: 1px;
+  text-shadow: 0 3px 12px rgba(0,0,0,.6);
 }
-.card .rank-line.line1 { font-size: 178px; }
-.card .rank-line.line2 { font-size: 140px; }
-.card .rank-nick {
-  margin-top: 12px; font-size: 32px; font-weight: 800; font-style: italic;
-  color: #fff; -webkit-text-stroke: 0; letter-spacing: 1px;
-  text-shadow: 0 3px 10px rgba(0,0,0,.7);
+.card .rank-name {
+  margin-top: 6px; line-height: 1.04;
+  font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+  font-size: 88px; font-weight: 900; color: var(--gold);
+  -webkit-text-stroke: 1px var(--gold-deep); paint-order: stroke fill;
+  text-shadow: 0 3px 0 rgba(80,52,8,.45), 0 8px 20px rgba(0,0,0,.65);
+  word-break: break-word;
 }
+/* 無得獎人名稱時不留空隙 */
+.card .rank-name:empty { margin-top: 0; }
 
 /* 右側面板 */
 .card .panel {
@@ -403,8 +423,8 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 .card .bey-row::before {
   content: ""; position: absolute; left: 0; top: 50%;
   width: 12px; height: 12px; border-radius: 50%;
-  background: var(--accent); transform: translateY(-50%);
-  box-shadow: 0 0 0 4px rgba(255,255,255,.12);
+  background: var(--gold); transform: translateY(-50%);
+  box-shadow: 0 0 0 4px rgba(231,197,107,.18);
 }
 .card .part {
   display: flex; align-items: center; justify-content: center;
@@ -431,18 +451,6 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 .cx-metal  { top: 24%; width: 90%; height: 48%; z-index: 3; }
 .cx-main   { top: 15%; width: 92%; height: 52%; z-index: 3; }
 .cx-assist { top: 34%; width: 78%; height: 46%; z-index: 1; }
-/* 零件圖裁切外框 */
-.card[data-shape="rounded"] .part img {
-  width: 88%; height: 88%; max-width: none; max-height: none;
-  object-fit: cover; border-radius: 18px;
-  border: 2px solid rgba(255,255,255,.14);
-}
-.card[data-shape="circle"] .part img {
-  width: 130px; height: 130px;        /* 正方形 → 正圓（不受窄欄寬度壓成橢圓）*/
-  max-width: 100%; max-height: none;
-  object-fit: cover; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,.18);
-}
 .card .part .ph {
   font-size: 18px; color: rgba(255,255,255,.28); font-weight: 700;
   border: 2px dashed rgba(255,255,255,.18); border-radius: 10px;
@@ -459,7 +467,7 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 }
 .card .bey-name::before {
   content: ""; width: 13px; height: 26px;
-  border: 3px solid var(--accent); border-right: none;
+  border: 3px solid var(--gold); border-right: none;
   border-radius: 3px 0 0 3px;        /* 「[」規格括號感，對齊參考圖 */
 }
 /* B1：無名稱時不顯示三角刻度 */

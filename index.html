@@ -35,18 +35,11 @@
             <option value="4">4TH PLACE（紫）</option>
           </select>
         </label>
-        <label>LOGO 文字
-          <input type="text" id="logoInput" value="Beybladex" />
+        <label>比賽名稱
+          <input type="text" id="logoInput" value="經典賽" />
         </label>
-        <label>暱稱 / 副標（選填）
-          <input type="text" id="nickInput" placeholder="例：選手暱稱" />
-        </label>
-        <label>零件圖呈現
-          <select id="shapeSelect">
-            <option value="full">完整（不裁切）</option>
-            <option value="rounded">圓角方框</option>
-            <option value="circle">圓框</option>
-          </select>
+        <label>得獎人名稱
+          <input type="text" id="nickInput" placeholder="例：陀螺毀滅者C" />
         </label>
       </details>
 
@@ -74,7 +67,14 @@
       <div class="card-tabs" id="cardTabs"></div>
       <div class="stage" id="stage">
         <div class="card" id="card">
-          <div class="logo" id="logoText">Beybladex</div>
+          <div class="title">
+            <div class="title-text" id="logoText">經典賽</div>
+            <div class="title-divider" aria-hidden="true">
+              <span class="td-line"></span>
+              <span class="td-gem">◈</span>
+              <span class="td-line"></span>
+            </div>
+          </div>
 
           <div class="person" id="personWrap">
             <img id="personImg" alt="" />
@@ -82,9 +82,8 @@
 
           <div class="rank-scrim"></div>
           <div class="rank">
-            <div class="rank-line line1" id="rankLine1">1ST</div>
-            <div class="rank-line line2" id="rankLine2">PLACE</div>
-            <div class="rank-nick" id="rankNick"></div>
+            <div class="rank-place" id="rankPlace">1st Place</div>
+            <div class="rank-name" id="rankNick"></div>
           </div>
 
           <div class="panel">

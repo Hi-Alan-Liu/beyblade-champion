@@ -2,10 +2,10 @@
 
 // ===== 名次設定 =====
 const RANKS = {
-  "1": { accent: "#E10600", line1: "1ST", line2: "PLACE" },
-  "2": { accent: "#1455C0", line1: "2ND", line2: "PLACE" },
-  "3": { accent: "#1A9E3E", line1: "3RD", line2: "PLACE" },
-  "4": { accent: "#7A3FD4", line1: "4TH", line2: "PLACE" },
+  "1": { accent: "#E10600", line1: "1ST", line2: "PLACE", place: "1st Place" },
+  "2": { accent: "#1455C0", line1: "2ND", line2: "PLACE", place: "2nd Place" },
+  "3": { accent: "#1A9E3E", line1: "3RD", line2: "PLACE", place: "3rd Place" },
+  "4": { accent: "#7A3FD4", line1: "4TH", line2: "PLACE", place: "4th Place" },
 };
 
 // ===== 零件定義（每顆陀螺）=====
@@ -406,13 +406,10 @@ function renderBeyName(i) {
   $(`cn-${i}`).textContent = "合併名稱：" + (name || "（待輸入）") + (fused ? "　⚠ 合體型：固鎖/軸心可留空" : "");
 }
 
-// ===== 套用名次配色與文字 =====
+// ===== 套用名次文字（卡片配色固定為金色典雅風，見 styles.css 的 --gold） =====
 function applyRank() {
   const r = RANKS[state.rank];
-  card.style.setProperty("--accent", r.accent);
-  document.documentElement.style.setProperty("--accent", r.accent);
-  $("rankLine1").textContent = r.line1;
-  $("rankLine2").textContent = r.line2;
+  $("rankPlace").textContent = r.place;
 }
 
 // ===== 圖片上傳：File -> 自動縮放/壓縮 -> dataURL =====
@@ -557,7 +554,7 @@ function normalizePart(p) {
 function blankCard(rank) {
   return {
     title: "", rank: rank || "1", size: "ig", shape: "full",
-    logo: "Beybladex", nick: "",
+    logo: "經典賽", nick: "",
     person: "", bg: "",
     beys: [0, 1, 2].map(() => ({
       blade: blankPart(), ratchet: blankPart(), bit: blankPart(),
@@ -574,7 +571,7 @@ function readCardFromDOM() {
   return {
     rank: $("rankSelect").value,
     size: $("sizeSelect").value,
-    shape: $("shapeSelect").value,
+    shape: "full",
     logo: $("logoInput").value,
     nick: $("nickInput").value,
     person: ($("personImg").style.display !== "none" && $("personImg").getAttribute("src")) || "",
@@ -605,7 +602,7 @@ function loadCardToDOM(c) {
   c = c || blankCard();
   $("rankSelect").value = c.rank || "1"; state.rank = c.rank || "1";
   $("sizeSelect").value = c.size || "ig"; state.size = c.size || "ig";
-  $("shapeSelect").value = c.shape || "full"; state.shape = c.shape || "full";
+  state.shape = "full";
   $("logoInput").value = c.logo ?? ""; $("logoText").textContent = c.logo ?? "";
   $("nickInput").value = c.nick || ""; $("rankNick").textContent = c.nick || "";
   setImg($("personImg"), null, c.person || "");
@@ -771,11 +768,6 @@ function bindEvents() {
   $("sizeSelect").addEventListener("change", (e) => {
     state.size = e.target.value;
     applySize();
-  });
-
-  $("shapeSelect").addEventListener("change", (e) => {
-    state.shape = e.target.value;
-    applyShape();
   });
 
   $("logoInput").addEventListener("input", (e) => {
