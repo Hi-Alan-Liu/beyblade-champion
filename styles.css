@@ -69,6 +69,10 @@ body {
   body.drawer-open .controls { transform: translateX(0); }
   .controls .btn-download { display: none; }        /* 改由底部工具列輸出 */
 
+  /* 觸控目標 ≥44px：手機抽屜內的下拉/輸入/按鈕更好點 */
+  .controls .form-control, .controls .form-select, .controls .btn { min-height: 44px; }
+  .controls .form-control-sm { min-height: 40px; }
+
   .drawer-close { display: block; align-self: flex-end; }
 
   /* 抽屜背景遮罩 */
