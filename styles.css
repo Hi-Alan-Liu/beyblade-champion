@@ -50,8 +50,9 @@ body {
 /* ===== 手機 / 平板（≤1024px）：設定改為可展開的 Sidebar 抽屜 ===== */
 @media (max-width: 1024px) {
   .layout { grid-template-columns: 1fr; padding: 12px; gap: 12px; }
-  .preview { position: static; }
-  #previewArea { padding-bottom: 80px; }            /* 留白給底部行動工具列 */
+  /* 預覽在可視區內垂直置中，消除卡片與底部工具列間的大片留白 */
+  .preview { position: static; justify-content: center; min-height: calc(100svh - 92px); }
+  #previewArea { padding-bottom: 16px; }            /* 底部工具列由 min-height 預留空間 */
   body.drawer-open { overflow: hidden; }            /* 抽屜開啟時鎖住背景捲動 */
 
   /* 控制面板 → 左側滑入抽屜 */
