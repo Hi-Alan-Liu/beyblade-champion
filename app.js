@@ -129,17 +129,17 @@ function createGalleryModal() {
         <button type="button" class="modal-close" id="galClose" title="關閉">✕</button>
       </div>
       <div class="modal-tabs" id="galTabs"></div>
-      <input type="text" class="modal-search" id="galSearch" placeholder="搜尋名稱 / 代碼…" />
-      <select class="modal-select" id="galSelect" hidden></select>
+      <input type="text" class="modal-search form-control" id="galSearch" placeholder="搜尋名稱 / 代碼…" />
+      <select class="modal-select form-select" id="galSelect" hidden></select>
       <div class="modal-hint" id="galHint"></div>
       <div class="modal-grid" id="galGrid"></div>
       <div class="modal-foot">
-        <label class="modal-upload">⬆ 自訂上傳
+        <label class="modal-upload btn btn-sm btn-outline-primary">⬆ 自訂上傳
           <input type="file" accept="image/*" id="galUpload" hidden />
         </label>
         <div class="modal-foot-right">
-          <button type="button" class="modal-clear" id="galClear">清除此格</button>
-          <button type="button" class="modal-apply" id="galApply" hidden>套用至卡片</button>
+          <button type="button" class="modal-clear btn btn-sm btn-outline-secondary" id="galClear">清除此格</button>
+          <button type="button" class="modal-apply btn btn-sm btn-primary" id="galApply" hidden>套用至卡片</button>
         </div>
       </div>
     </div>`;
@@ -759,6 +759,9 @@ function switchCard(i) {
   renderTabs();
   saveState();
   fitStage();
+  // 重新觸發淡入動畫（移除→強制 reflow→加回）
+  const st = $("stage");
+  st.classList.remove("switching"); void st.offsetWidth; st.classList.add("switching");
 }
 function addCard() {
   cards[active] = { ...cards[active], ...readCardFromDOM() };

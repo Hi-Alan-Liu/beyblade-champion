@@ -229,18 +229,9 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   color: var(--muted); padding: 5px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
 }
 .modal-tabs .gtab.active { color: #fff; border-color: var(--accent); background: rgba(255,255,255,.05); }
-.modal-search {
-  margin: 12px 18px 0;
-  background: #0e0e13; border: 1px solid var(--line); border-radius: 8px;
-  color: var(--text); padding: 9px 12px; font-size: 14px; font-family: inherit;
-}
-.modal-search:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
-.modal-select {
-  margin: 10px 18px 0;
-  background: #0e0e13; border: 1px solid var(--line); border-radius: 8px;
-  color: var(--text); padding: 9px 12px; font-size: 14px; font-family: inherit;
-}
-.modal-select:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+/* modal 搜尋/下拉外觀交給 Bootstrap，只保留版位邊距 */
+.modal-search { margin: 12px 18px 0; }
+.modal-select { margin: 10px 18px 0; }
 .modal-select[hidden] { display: none; }
 .modal-hint { padding: 6px 18px 0; font-size: 12px; color: var(--accent); min-height: 0; }
 .modal-grid {
@@ -263,22 +254,9 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 12px 18px; border-top: 1px solid var(--line);
 }
-.modal-upload {
-  background: transparent; border: 1px solid var(--accent); border-radius: 8px;
-  color: var(--text); padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
-}
-.modal-upload:hover { background: rgba(255,255,255,.05); }
-.modal-clear {
-  background: transparent; border: 1px solid var(--line); border-radius: 8px;
-  color: var(--muted); padding: 8px 14px; font-size: 13px; cursor: pointer;
-}
-.modal-clear:hover { color: var(--text); border-color: var(--muted); }
+/* modal 底部按鈕外觀交給 Bootstrap btn；上傳鈕內含隱藏 file input 需置中 */
+.modal-upload { display: inline-flex; align-items: center; }
 .modal-foot-right { display: flex; align-items: center; gap: 8px; }
-.modal-apply {
-  background: var(--accent); color: #fff; border: none; border-radius: 8px;
-  padding: 8px 16px; font-size: 13px; font-weight: 800; cursor: pointer;
-}
-.modal-apply:hover { filter: brightness(1.1); }
 .modal-apply[hidden] { display: none; }
 
 /* CX 拆解組裝器（Modal 內） */
@@ -341,6 +319,15 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   /* JS 設定 transform: scale() 與容器尺寸 */
   box-shadow: 0 0 0 1px var(--line), 0 24px 60px rgba(0,0,0,.6); /* B3：預覽卡片邊界 */
   border-radius: 4px;
+}
+/* 切換卡片分頁時的淡入過場 */
+@keyframes cardFade { from { opacity: .3; } to { opacity: 1; } }
+.stage.switching { animation: cardFade .22s ease-out; }
+
+/* 尊重「減少動態」偏好：關閉抽屜滑動與卡片淡入 */
+@media (prefers-reduced-motion: reduce) {
+  .controls { transition: none; }
+  .stage.switching { animation: none; }
 }
 
 /* ===== 卡片本體 (1080×1350) ===== */
