@@ -19,13 +19,14 @@ const BEY_COUNT = 3;
 
 // ===== 人物去背 AI Prompt（供「複製 AI 去背 Prompt」按鈕使用）=====
 const AI_PERSON_PROMPT =
-`請幫我將這張人物照片去背，處理成可放進「戰鬥陀螺排名卡片」的人物素材：
-1. 完整移除背景，只保留人物主體，輸出為背景全透明的 PNG。
-2. 保留完整人物，頭頂、手部與腳部都不要被裁切。
-3. 邊緣乾淨自然、髮絲俐落，不留任何原背景殘影或陰影。
-4. 不要替換成其他背景，背景必須是全透明。
-5. 人物會放在卡片左側的人物區、疊在深色卡片背景上，請以直立站姿、置中、底部對齊輸出。
-6. 輸出尺寸建議為直式人像，比例約 2:3 ～ 9:16（例如 1080×1620 px 或 1080×1920 px），人物置中、底部對齊並保留少許上方留白。`;
+`請幫我將這張人物照片「只做去背」，處理成可放進「戰鬥陀螺排名卡片」的人物素材：
+1. 只移除背景、保留人物主體，輸出為背景全透明的 PNG。
+2. ⚠ 人物本身必須保持原樣：不要美顏、磨皮、瘦臉、調色、補光、銳化、重繪或任何 AI 優化；五官、膚色、體型、服裝、光影與細節都要與原圖完全一致，只能更改背景。
+3. 保留完整人物，頭頂、手部與腳部都不要被裁切。
+4. 邊緣乾淨自然、髮絲俐落，不留任何原背景殘影或陰影。
+5. 不要替換成其他背景，背景必須是全透明。
+6. 人物會放在卡片左側的人物區、疊在深色卡片背景上，請以直立站姿、置中、底部對齊輸出。
+7. 輸出尺寸建議為直式人像，比例約 2:3 ～ 9:16（例如 1080×1620 px 或 1080×1920 px），人物置中、底部對齊並保留少許上方留白。`;
 
 // 複製文字到剪貼簿：先試 Clipboard API，失敗則退回 execCommand（兼容無焦點/權限受限環境）
 async function copyText(text) {
@@ -88,7 +89,7 @@ function buildBeyControls() {
               <img class="slot-thumb" id="slot-img-${i}-${p.key}" alt="" />
               <span class="slot-empty" id="slot-empty-${i}-${p.key}">＋ ${p.label}</span>
             </button>
-            <input type="text" class="slot-name" data-bey="${i}" data-part="${p.key}" data-kind="name" placeholder="${p.label}名稱" />
+            <input type="text" class="slot-name form-control form-control-sm" data-bey="${i}" data-part="${p.key}" data-kind="name" placeholder="${p.label}名稱" />
           </div>`
         ).join("")}
       </div>
@@ -582,7 +583,7 @@ function blankCard(rank) {
   return {
     title: "", rank: rank || "1", size: "square", shape: "full",
     logo: "經典賽", nick: "",
-    person: "", bg: "",
+    person: "", bg: "", cardBg: "",
     beys: [0, 1, 2].map(() => ({
       blade: blankPart(), ratchet: blankPart(), bit: blankPart(),
     })),
@@ -603,6 +604,7 @@ function readCardFromDOM() {
     nick: $("nickInput").value,
     person: ($("personImg").style.display !== "none" && $("personImg").getAttribute("src")) || "",
     bg: $("panelBg").style.backgroundImage || "",
+    cardBg: $("cardBg").style.backgroundImage || "",
     beys: [0, 1, 2].map((i) => {
       const o = {};
       const prevBey = (prev.beys && prev.beys[i]) || {};
@@ -634,6 +636,7 @@ function loadCardToDOM(c) {
   $("nickInput").value = c.nick || ""; $("rankNick").textContent = c.nick || "";
   setImg($("personImg"), null, c.person || "");
   $("panelBg").style.backgroundImage = c.bg || "";
+  $("cardBg").style.backgroundImage = c.cardBg || "";
   const parts = ["blade", "ratchet", "bit"];
   (c.beys || []).forEach((b, i) => {
     if (i >= BEY_COUNT) return;
@@ -812,6 +815,13 @@ function bindEvents() {
     const f = e.target.files[0];
     if (f) readImage(f, (url) => {
       $("panelBg").style.backgroundImage = `url(${url})`;
+      saveState();
+    });
+  });
+  $("cardBgFile").addEventListener("change", (e) => {
+    const f = e.target.files[0];
+    if (f) readImage(f, (url) => {
+      $("cardBg").style.backgroundImage = `url(${url})`;
       saveState();
     });
   });

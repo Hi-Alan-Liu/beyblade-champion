@@ -68,7 +68,7 @@ body {
   body.drawer-open .controls { transform: translateX(0); }
   .controls .btn-download { display: none; }        /* 改由底部工具列輸出 */
 
-  .drawer-close { display: block; align-self: flex-end; padding: 9px 16px; }
+  .drawer-close { display: block; align-self: flex-end; }
 
   /* 抽屜背景遮罩 */
   .drawer-backdrop {
@@ -86,12 +86,7 @@ body {
     border-top: 1px solid var(--line);
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   }
-  .mobile-bar button {
-    flex: 1; border: none; border-radius: 10px; padding: 13px;
-    font-size: 15px; font-weight: 800; cursor: pointer; color: #fff;
-  }
-  .mbar-edit { background: var(--accent); }
-  .mbar-export { background: linear-gradient(135deg, var(--accent-2), #ff8c42); }
+  .mobile-bar .btn { flex: 1; padding: 12px; font-size: 15px; font-weight: 800; }
 }
 
 /* ===== 控制面板 ===== */
@@ -124,19 +119,34 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   display: flex; flex-direction: column; gap: 6px;
   font-size: 13px; font-weight: 600; color: var(--muted);
 }
-/* === 統一互動元件外觀：輸入框 / 下拉選單 === */
-.controls input[type="text"],
-.controls select {
-  background: #0e1320; border: 1px solid var(--line); border-radius: 10px;
-  color: var(--text); padding: 10px 12px; font-size: 14px; font-weight: 600; font-family: inherit;
-  transition: border-color .14s, box-shadow .14s, background .14s;
+/* === Bootstrap 主題對齊：把 primary/warning 換成戰鬥陀螺配色 === */
+[data-bs-theme="dark"] {
+  --bs-body-bg: var(--bg);
+  --bs-border-color: var(--line);
 }
-.controls input[type="text"]:focus,
-.controls select:focus {
-  outline: none; border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(47,143,230,.18);
+.btn-primary {
+  --bs-btn-bg: var(--accent); --bs-btn-border-color: var(--accent);
+  --bs-btn-hover-bg: #4aa0ee; --bs-btn-hover-border-color: #4aa0ee;
+  --bs-btn-active-bg: #2477c7; --bs-btn-active-border-color: #2477c7;
+  --bs-btn-color: #fff; --bs-btn-hover-color: #fff;
 }
-.controls input[type="file"] { font-size: 12px; color: var(--muted); }
+.btn-outline-primary {
+  --bs-btn-color: var(--accent); --bs-btn-border-color: var(--accent);
+  --bs-btn-hover-bg: var(--accent); --bs-btn-hover-border-color: var(--accent);
+  --bs-btn-active-bg: var(--accent); --bs-btn-active-border-color: var(--accent);
+}
+/* 複製成功時的視覺提示（橘色）*/
+.btn-ai-prompt.copied { --bs-btn-color: var(--accent-2); --bs-btn-border-color: var(--accent-2); }
+.btn-warning {
+  --bs-btn-bg: var(--accent-2); --bs-btn-border-color: var(--accent-2);
+  --bs-btn-hover-bg: #ff8243; --bs-btn-hover-border-color: #ff8243;
+  --bs-btn-active-bg: #e85a20; --bs-btn-active-border-color: #e85a20;
+  --bs-btn-color: #fff; --bs-btn-hover-color: #fff; --bs-btn-active-color: #fff;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 .2rem rgba(47,143,230,.25);
+}
+
 /* 拖放上傳區 */
 .controls label.dropzone {
   border: 1px dashed transparent; border-radius: 10px; padding: 4px;
@@ -146,32 +156,11 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   border-color: var(--accent); background: rgba(47,143,230,.08);
 }
 
-/* === 主要 CTA（輸出）：能量橘漸層 === */
+/* 主要 CTA（輸出）：沿用 Bootstrap btn-warning，僅補上桌機 sticky 與字距 */
 .btn-download {
-  background: linear-gradient(135deg, var(--accent-2), #ff8c42);
-  color: #fff; border: none; border-radius: 10px;
-  padding: 14px; font-size: 16px; font-weight: 800; cursor: pointer;
-  letter-spacing: 2px; text-transform: uppercase;
-  box-shadow: 0 6px 18px rgba(255,106,44,.32);
   position: sticky; top: 0; z-index: 5;
-  transition: filter .14s;
-}
-.btn-download:hover { filter: brightness(1.08); }
-.btn-download:disabled { opacity: .6; cursor: progress; }
-
-/* === 次要按鈕：統一外觀（複製 Prompt / 複製卡片 / 重設 / 抽屜完成）=== */
-.btn-reset, .btn-dup, .btn-ai-prompt, .drawer-close {
-  background: #0e1320; color: var(--text);
-  border: 1px solid var(--line); border-radius: 10px;
-  padding: 11px 12px; font-size: 13px; font-weight: 700; font-family: inherit;
-  cursor: pointer; text-align: center;
-  transition: border-color .14s, background .14s, color .14s;
-}
-.btn-reset:hover, .btn-dup:hover, .btn-ai-prompt:hover, .drawer-close:hover {
-  border-color: var(--accent); color: #fff; background: rgba(47,143,230,.10);
-}
-.btn-ai-prompt.copied {
-  border-color: var(--accent-2); color: var(--accent-2); background: rgba(255,106,44,.10);
+  font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+  box-shadow: 0 6px 18px rgba(255,106,44,.30);
 }
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .hint { font-size: 12px; color: var(--muted); margin: -4px 0 2px; }
@@ -202,12 +191,8 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   display: flex; align-items: center; justify-content: center; text-align: center;
   font-size: 12px; font-weight: 700; color: rgba(255,255,255,.32);
 }
-.slot-name {
-  background: #0e0e13; border: 1px solid var(--line); border-radius: 8px;
-  color: var(--text); padding: 6px 8px; font-size: 12px; font-family: inherit;
-  width: 100%; min-width: 0;
-}
-.slot-name:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+/* slot-name 外觀交給 Bootstrap form-control-sm，這裡只保留格線收縮所需 */
+.slot-name { min-width: 0; }
 
 /* ===== 選圖庫 Modal ===== */
 .modal-overlay {
@@ -368,6 +353,12 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   overflow: hidden;
   color: #fff;
   font-family: "Arial Black", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+}
+
+/* 卡片整體背景（上傳時覆蓋預設漸層；未上傳則透明、露出漸層）*/
+.card .card-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background-size: cover; background-position: center; background-repeat: no-repeat;
 }
 
 /* 比賽名稱（置中於上方）＋ 裝飾分隔線 */

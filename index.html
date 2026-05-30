@@ -1,27 +1,29 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" data-bs-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>陀螺配置卡片產生器</title>
+  <!-- Bootstrap 先載，styles.css 後載以套用我們的主題覆蓋 -->
+  <link rel="stylesheet" href="vendor/bootstrap.min.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <main class="layout">
     <!-- 左：控制面板 -->
     <section class="controls" id="controls">
-      <button type="button" class="drawer-close" id="btnDrawerClose">完成 ✕</button>
-      <button class="btn-download" id="btnDownload">輸出 PNG</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary drawer-close" id="btnDrawerClose">完成 ✕</button>
+      <button class="btn btn-warning btn-download" id="btnDownload">輸出 PNG</button>
 
       <details class="group">
         <summary>名次與文字</summary>
         <label>匯出尺寸
-          <select id="sizeSelect">
+          <select id="sizeSelect" class="form-select">
             <option value="square">方形 1:1（1080×1080）</option>
           </select>
         </label>
         <label>名次
-          <select id="rankSelect">
+          <select id="rankSelect" class="form-select">
             <option value="1">1ST PLACE</option>
             <option value="2">2ND PLACE</option>
             <option value="3">3RD PLACE</option>
@@ -29,21 +31,24 @@
           </select>
         </label>
         <label>比賽名稱
-          <input type="text" id="logoInput" value="經典賽" />
+          <input type="text" id="logoInput" class="form-control" value="經典賽" />
         </label>
         <label>得獎人名稱
-          <input type="text" id="nickInput" placeholder="例：陀螺毀滅者C" />
+          <input type="text" id="nickInput" class="form-control" placeholder="例：陀螺毀滅者C" />
         </label>
       </details>
 
       <details class="group">
         <summary>圖片</summary>
         <label>人物照片
-          <input type="file" id="personFile" accept="image/*" />
+          <input type="file" id="personFile" class="form-control" accept="image/*" />
         </label>
-        <button type="button" class="btn-ai-prompt" id="btnCopyPrompt">📋 複製 AI 去背 Prompt</button>
+        <button type="button" class="btn btn-outline-primary btn-ai-prompt" id="btnCopyPrompt">📋 複製 AI 去背 Prompt</button>
+        <label>卡片整體背景（選填）
+          <input type="file" id="cardBgFile" class="form-control" accept="image/*" />
+        </label>
         <label>右側面板背景（選填）
-          <input type="file" id="bgFile" accept="image/*" />
+          <input type="file" id="bgFile" class="form-control" accept="image/*" />
         </label>
       </details>
 
@@ -51,8 +56,8 @@
       <div id="beyControls"></div>
 
       <div class="row-2">
-        <button class="btn-dup" id="btnDuplicate">⧉ 複製目前卡片</button>
-        <button class="btn-reset" id="btnReset">清空重設</button>
+        <button class="btn btn-outline-secondary btn-dup" id="btnDuplicate">⧉ 複製目前卡片</button>
+        <button class="btn btn-outline-secondary btn-reset" id="btnReset">清空重設</button>
       </div>
     </section>
 
@@ -61,6 +66,7 @@
       <div class="card-tabs" id="cardTabs"></div>
       <div class="stage" id="stage">
         <div class="card" id="card">
+          <div class="card-bg" id="cardBg"></div>
           <div class="title">
             <div class="title-text" id="logoText">經典賽</div>
             <div class="title-divider" aria-hidden="true">
@@ -92,8 +98,8 @@
   <!-- 手機/平板：抽屜遮罩 + 底部行動工具列（桌機隱藏） -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <div class="mobile-bar" id="mobileBar">
-    <button type="button" class="mbar-edit" id="btnDrawer">✎ 編輯設定</button>
-    <button type="button" class="mbar-export" id="btnExportMobile">⬇ 輸出 PNG</button>
+    <button type="button" class="btn btn-primary mbar-edit" id="btnDrawer">✎ 編輯設定</button>
+    <button type="button" class="btn btn-warning mbar-export" id="btnExportMobile">⬇ 輸出 PNG</button>
   </div>
 
   <!-- 離線優先：先載本機版，失敗才退回 CDN -->
