@@ -828,6 +828,17 @@ function bindEvents() {
       saveState();
     });
   });
+  // 清除背景：清空圖片 → 還原為預設漸層
+  $("btnClearCardBg").addEventListener("click", () => {
+    $("cardBg").style.backgroundImage = "";
+    $("cardBgFile").value = "";
+    saveState();
+  });
+  $("btnClearPanelBg").addEventListener("click", () => {
+    $("panelBg").style.backgroundImage = "";
+    $("bgFile").value = "";
+    saveState();
+  });
 
   // 名稱輸入（事件委派）：圖庫選取會自動帶入，使用者仍可手動覆寫
   $("beyControls").addEventListener("input", (e) => {

@@ -40,16 +40,18 @@
 
       <details class="group">
         <summary>圖片</summary>
+        <button type="button" class="btn btn-outline-primary btn-ai-prompt" id="btnCopyPrompt">📋 複製 AI 去背 Prompt</button>
         <label>人物照片
           <input type="file" id="personFile" class="form-control" accept="image/*" />
         </label>
-        <button type="button" class="btn btn-outline-primary btn-ai-prompt" id="btnCopyPrompt">📋 複製 AI 去背 Prompt</button>
         <label>卡片整體背景（選填）
           <input type="file" id="cardBgFile" class="form-control" accept="image/*" />
         </label>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearCardBg">清除卡片背景</button>
         <label>右側面板背景（選填）
           <input type="file" id="bgFile" class="form-control" accept="image/*" />
         </label>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearPanelBg">清除面板背景</button>
       </details>
 
       <!-- 3 顆陀螺的控制項由 app.js 動態產生（每個部件＝圖庫選取格） -->
