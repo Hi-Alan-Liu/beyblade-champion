@@ -337,8 +337,8 @@ function applyCxDraft() {
     if (e) chosen[c] = { key: e.key, img: e.img, name: e.name };
   });
   if (!Object.keys(chosen).length) { alert("請至少選一個 CX 子部件"); return; }
-  // 組裝名稱：無分隔符直接串接；輔助戰刃只取代碼(單字母，如 Heavy→H)
-  const name = comps.filter((c) => chosen[c]).map((c) => (c === "assist" ? chosen[c].key : chosen[c].name)).join("");
+  // 組裝名稱：無分隔符直接串接；超越刃與輔助戰刃只取代碼(單字母，如 Break→B、Heavy→H)
+  const name = comps.filter((c) => chosen[c]).map((c) => (c === "assist" || c === "over" ? chosen[c].key : chosen[c].name)).join("");
   setPartData(galTarget.bey, "blade", {
     source: "gallery", cx: true, mode: cxDraft.mode, comps: chosen, name, group: "CX", key: "", img: "",
   });
