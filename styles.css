@@ -36,65 +36,6 @@ body {
 }
 .file-banner strong { color: #fff; }
 
-/* ===== 頁首（LOGO + 標題 + 社群介紹） ===== */
-.site-header {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 24px; flex-wrap: wrap;
-  padding: 18px 24px;
-  border-bottom: 1px solid var(--line);
-  background:
-    radial-gradient(60% 120% at 0% 0%, rgba(231,197,107,.10), transparent 60%),
-    linear-gradient(180deg, rgba(19,27,43,.9), rgba(12,17,28,.9));
-}
-/* 品牌：LOGO + 標題 */
-.site-header .brand { display: flex; align-items: center; gap: 16px; min-width: 0; }
-.brand-logo {
-  width: 56px; height: 56px; flex: none;
-  object-fit: cover; border-radius: 14px;
-  background: #fff; padding: 4px;
-  border: 1px solid rgba(231,197,107,.5);
-  box-shadow: 0 4px 14px rgba(0,0,0,.4);
-}
-.brand-text { min-width: 0; }
-.brand-title {
-  font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
-  font-size: 26px; font-weight: 900; letter-spacing: 2px; line-height: 1.1;
-  color: var(--gold);
-  -webkit-text-stroke: .5px var(--gold-deep); paint-order: stroke fill;
-}
-.brand-tagline { margin-top: 4px; font-size: 13px; color: var(--muted); }
-
-/* 社群介紹卡 */
-.site-header .community {
-  display: flex; align-items: center; gap: 14px;
-  max-width: 460px;
-  padding: 10px 14px;
-  background: var(--panel-bg);
-  border: 1px solid var(--line); border-radius: 14px;
-}
-.community-img {
-  width: 64px; height: 64px; flex: none;
-  object-fit: cover; border-radius: 10px;
-  background: #fff; padding: 4px;
-  border: 1px solid var(--line);
-}
-.community-text { min-width: 0; }
-.community-title { font-size: 14px; font-weight: 800; color: var(--accent); margin-bottom: 2px; }
-.community-desc { font-size: 12.5px; line-height: 1.5; color: var(--text); }
-.community-link {
-  display: inline-block; margin-top: 6px;
-  font-size: 12.5px; font-weight: 700; color: var(--accent-2);
-  text-decoration: none;
-}
-.community-link:hover { text-decoration: underline; }
-
-/* 手機/平板：頁首改為直向堆疊，社群卡撐滿寬 */
-@media (max-width: 1024px) {
-  .site-header { padding: 14px 16px; gap: 14px; }
-  .brand-title { font-size: 22px; }
-  .site-header .community { max-width: none; width: 100%; }
-}
-
 /* ===== 版面 ===== */
 .layout {
   display: grid;

@@ -32,4 +32,8 @@ node_modules/
 !assets/img/
 !assets/img/**
 
+# 品牌資產（網站 LOGO / favicon）為必要內容，務必入庫（覆蓋上面的 *.png 忽略）
+!assets/brand/
+!assets/brand/**
+
 # 注意：vendor/html-to-image.js 為離線必要檔，務必入庫（不忽略）
