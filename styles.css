@@ -229,6 +229,24 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .hint { font-size: 12px; color: var(--muted); margin: -4px 0 2px; }
 
+/* 顏色選擇（名次 / 得獎人名稱）：4 預設色票 + 調色盤 */
+.color-field { display: flex; flex-direction: column; gap: 6px; }
+.color-field .color-label { font-size: 13px; font-weight: 600; color: var(--muted); }
+.swatches { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.swatch {
+  width: 26px; height: 26px; padding: 0; border-radius: 50%;
+  background: var(--sw); border: 2px solid var(--line); cursor: pointer;
+  transition: transform .08s, border-color .12s, box-shadow .12s;
+}
+.swatch:hover { transform: scale(1.08); }
+.swatch.active { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
+.color-pick {
+  width: 38px; height: 28px; padding: 0; cursor: pointer; margin-left: 2px;
+  background: transparent; border: 1px solid var(--line); border-radius: 6px;
+}
+.color-pick::-webkit-color-swatch-wrapper { padding: 2px; }
+.color-pick::-webkit-color-swatch { border: none; border-radius: 4px; }
+
 /* 動態陀螺控制 */
 .bey-block {
   border: 1px solid var(--line); border-radius: 12px; padding: 14px;
@@ -469,7 +487,7 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 .card .rank-name {
   margin-top: 6px; line-height: 1.04;
   font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
-  font-size: 88px; font-weight: 900; color: var(--gold);
+  font-size: 88px; font-weight: 900; color: var(--nick-color, var(--gold));
   -webkit-text-stroke: 1px var(--gold-deep); paint-order: stroke fill;
   text-shadow: 0 3px 0 rgba(80,52,8,.45), 0 8px 20px rgba(0,0,0,.65);
   word-break: break-word;

@@ -54,6 +54,9 @@ const SIZES = {
 // ===== 狀態 =====
 const state = {
   rank: "1",
+  rankText: "1st Place",
+  rankColor: "#E7C56B",
+  nickColor: "#E7C56B",
   size: "square",
   shape: "full",
   beys: Array.from({ length: BEY_COUNT }, () => ({
@@ -433,11 +436,20 @@ function renderBeyName(i) {
   $(`cn-${i}`).textContent = "合併名稱：" + (name || "（待輸入）") + (fused ? "　⚠ 合體型：固鎖/軸心可留空" : "");
 }
 
-// ===== 套用名次文字與名次色（金銀銅＋紫；其餘維持金色典雅，見 styles.css） =====
+// ===== 套用名次文字/顏色與得獎人名稱顏色（皆可自訂，見 styles.css） =====
 function applyRank() {
-  const r = RANKS[state.rank];
-  $("rankPlace").textContent = r.place;
-  card.style.setProperty("--rank-color", r.color);
+  $("rankPlace").textContent = state.rankText;
+  card.style.setProperty("--rank-color", state.rankColor);
+}
+function applyNickColor() {
+  card.style.setProperty("--nick-color", state.nickColor);
+}
+// 同步預設色票的選取高亮（color input 回傳小寫 hex，比對時統一小寫）
+function markSwatch(containerId, color) {
+  const c = (color || "").toLowerCase();
+  $(containerId).querySelectorAll(".swatch").forEach((b) => {
+    b.classList.toggle("active", (b.dataset.color || "").toLowerCase() === c);
+  });
 }
 
 // ===== 圖片上傳：File -> 自動縮放/壓縮 -> dataURL =====
@@ -580,8 +592,11 @@ function normalizePart(p) {
 }
 
 function blankCard(rank) {
+  rank = rank || "1";
+  const r = RANKS[rank] || RANKS["1"];
   return {
-    title: "", rank: rank || "1", size: "square", shape: "full",
+    title: "", rank, size: "square", shape: "full",
+    rankText: r.place, rankColor: r.color, nickColor: "#E7C56B",
     logo: "經典賽", nick: "",
     person: "", bg: "", cardBg: "",
     beys: [0, 1, 2].map(() => ({
@@ -597,7 +612,10 @@ function readCardFromDOM() {
   const parts = ["blade", "ratchet", "bit"];
   const prev = cards[active] || blankCard();
   return {
-    rank: $("rankSelect").value,
+    rank: prev.rank || "1",                 // 保留舊欄位（分頁/檔名已改用 rankText）
+    rankText: $("rankInput").value,
+    rankColor: $("rankColor").value,
+    nickColor: $("nickColor").value,
     size: $("sizeSelect").value,
     shape: "full",
     logo: $("logoInput").value,
@@ -629,7 +647,14 @@ function readCardFromDOM() {
 // 把一張卡的資料寫進畫面
 function loadCardToDOM(c) {
   c = c || blankCard();
-  $("rankSelect").value = c.rank || "1"; state.rank = c.rank || "1";
+  const rDef = RANKS[c.rank] || RANKS["1"];
+  const rankText = c.rankText ?? rDef.place;
+  const rankColor = c.rankColor || rDef.color;
+  const nickColor = c.nickColor || "#E7C56B";
+  state.rank = c.rank || "1";
+  $("rankInput").value = rankText; state.rankText = rankText;
+  $("rankColor").value = rankColor; state.rankColor = rankColor; markSwatch("rankSwatches", rankColor);
+  $("nickColor").value = nickColor; state.nickColor = nickColor; markSwatch("nickSwatches", nickColor);
   $("sizeSelect").value = c.size || "square"; state.size = c.size || "square";
   state.shape = "full";
   $("logoInput").value = c.logo ?? ""; $("logoText").textContent = c.logo ?? "";
@@ -648,12 +673,17 @@ function loadCardToDOM(c) {
     });
     renderBeyName(i);
   });
-  applyRank(); applySize(); applyShape();
+  applyRank(); applyNickColor(); applySize(); applyShape();
 }
 
 // 把一張卡的部件補齊 v3 欄位（舊資料相容）
 function normalizeCard(c) {
   c = c || blankCard();
+  // 名次/顏色相容：舊資料只有 rank(1~4) → 補出 rankText / rankColor / nickColor
+  const rDef = RANKS[c.rank] || RANKS["1"];
+  if (c.rankText == null) c.rankText = rDef.place;
+  if (c.rankColor == null) c.rankColor = rDef.color;
+  if (c.nickColor == null) c.nickColor = "#E7C56B";
   const parts = ["blade", "ratchet", "bit"];
   c.beys = (c.beys || []).map((b) => {
     const o = {};
@@ -696,7 +726,7 @@ function clearState() {
 
 // ===== 分頁 UI =====
 function tabLabel(c, i) {
-  return (c.title && c.title.trim()) || (RANKS[c.rank] ? RANKS[c.rank].line1 : "卡片" + (i + 1));
+  return (c.title && c.title.trim()) || (c.rankText && c.rankText.trim()) || (RANKS[c.rank] ? RANKS[c.rank].line1 : "卡片" + (i + 1));
 }
 let dragFrom = null;   // 拖曳排序起點
 
@@ -793,10 +823,36 @@ function renameCard(i) {
 
 // ===== 事件綁定 =====
 function bindEvents() {
-  $("rankSelect").addEventListener("change", (e) => {
-    state.rank = e.target.value;
-    applyRank();
+  // 名次：自訂文字
+  $("rankInput").addEventListener("input", (e) => {
+    state.rankText = e.target.value;
+    $("rankPlace").textContent = e.target.value;
   });
+  // 名次顏色：調色盤即時預覽
+  $("rankColor").addEventListener("input", (e) => {
+    state.rankColor = e.target.value;
+    card.style.setProperty("--rank-color", e.target.value);
+    markSwatch("rankSwatches", e.target.value);
+  });
+  // 得獎人名稱顏色：調色盤即時預覽
+  $("nickColor").addEventListener("input", (e) => {
+    state.nickColor = e.target.value;
+    card.style.setProperty("--nick-color", e.target.value);
+    markSwatch("nickSwatches", e.target.value);
+  });
+  // 預設色票（點擊套用，並回填調色盤與高亮）
+  const bindSwatches = (containerId, colorInputId, apply) => {
+    $(containerId).addEventListener("click", (e) => {
+      const b = e.target.closest(".swatch"); if (!b) return;
+      const color = b.dataset.color;
+      $(colorInputId).value = color;
+      apply(color);
+      markSwatch(containerId, color);
+      saveState();
+    });
+  };
+  bindSwatches("rankSwatches", "rankColor", (c) => { state.rankColor = c; card.style.setProperty("--rank-color", c); });
+  bindSwatches("nickSwatches", "nickColor", (c) => { state.nickColor = c; card.style.setProperty("--nick-color", c); });
 
   $("sizeSelect").addEventListener("change", (e) => {
     state.size = e.target.value;
@@ -940,7 +996,8 @@ function triggerDownload(dataUrl, filename) {
   a.download = filename; a.href = dataUrl; a.click();
 }
 function cardFilename(c, i) {
-  const rankName = RANKS[c.rank] ? RANKS[c.rank].line1 : "card" + (i + 1);
+  const rawRank = (c.rankText || (RANKS[c.rank] && RANKS[c.rank].line1) || ("card" + (i + 1)));
+  const rankName = rawRank.trim().replace(/[^\w一-龥-]/g, "") || ("card" + (i + 1));
   const t = (c.title || "").trim().replace(/[^\w一-龥-]/g, "");
   return `beyblade-${t || rankName}-${c.size}.png`;
 }

@@ -45,20 +45,35 @@
             <option value="square">方形 1:1（1080×1080）</option>
           </select>
         </label>
-        <label>名次
-          <select id="rankSelect" class="form-select">
-            <option value="1">1ST PLACE</option>
-            <option value="2">2ND PLACE</option>
-            <option value="3">3RD PLACE</option>
-            <option value="4">4TH PLACE</option>
-          </select>
+        <label>名次文字
+          <input type="text" id="rankInput" class="form-control" value="1st Place" placeholder="例：1st Place / 冠軍 / MVP" />
         </label>
+        <div class="color-field">
+          <span class="color-label">名次顏色</span>
+          <div class="swatches" id="rankSwatches">
+            <button type="button" class="swatch" data-color="#E7C56B" style="--sw:#E7C56B" title="金" aria-label="金"></button>
+            <button type="button" class="swatch" data-color="#C7CCD4" style="--sw:#C7CCD4" title="銀" aria-label="銀"></button>
+            <button type="button" class="swatch" data-color="#C8843C" style="--sw:#C8843C" title="銅" aria-label="銅"></button>
+            <button type="button" class="swatch" data-color="#B388E0" style="--sw:#B388E0" title="紫" aria-label="紫"></button>
+            <input type="color" id="rankColor" class="color-pick" value="#E7C56B" title="自訂調色盤" aria-label="名次自訂顏色" />
+          </div>
+        </div>
         <label>比賽名稱
           <input type="text" id="logoInput" class="form-control" value="經典賽" />
         </label>
         <label>得獎人名稱
           <input type="text" id="nickInput" class="form-control" placeholder="例：陀螺毀滅者C" />
         </label>
+        <div class="color-field">
+          <span class="color-label">名稱顏色</span>
+          <div class="swatches" id="nickSwatches">
+            <button type="button" class="swatch" data-color="#FFFFFF" style="--sw:#FFFFFF" title="白" aria-label="白"></button>
+            <button type="button" class="swatch" data-color="#E7C56B" style="--sw:#E7C56B" title="金" aria-label="金"></button>
+            <button type="button" class="swatch" data-color="#C7CCD4" style="--sw:#C7CCD4" title="銀" aria-label="銀"></button>
+            <button type="button" class="swatch" data-color="#2F8FE6" style="--sw:#2F8FE6" title="藍" aria-label="藍"></button>
+            <input type="color" id="nickColor" class="color-pick" value="#E7C56B" title="自訂調色盤" aria-label="名稱自訂顏色" />
+          </div>
+        </div>
       </details>
 
       <details class="group">
