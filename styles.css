@@ -49,10 +49,11 @@ body {
 
 /* ===== 手機 / 平板（≤1024px）：設定改為可展開的 Sidebar 抽屜 ===== */
 @media (max-width: 1024px) {
-  .layout { grid-template-columns: 1fr; padding: 12px; gap: 12px; }
-  /* 預覽在可視區內垂直置中，消除卡片與底部工具列間的大片留白 */
-  .preview { position: static; justify-content: center; min-height: calc(100svh - 92px); }
-  #previewArea { padding-bottom: 16px; }            /* 底部工具列由 min-height 預留空間 */
+  /* 頂部固定工具列在上方，內容預留其高度（約 60px + 瀏海安全區） */
+  .layout { grid-template-columns: 1fr; padding: calc(60px + env(safe-area-inset-top)) 12px 12px; gap: 12px; }
+  /* 預覽在可視區內垂直置中 */
+  .preview { position: static; justify-content: center; min-height: calc(100svh - 60px - env(safe-area-inset-top) - 24px); }
+  #previewArea { padding-bottom: 16px; }
   body.drawer-open { overflow: hidden; }            /* 抽屜開啟時鎖住背景捲動 */
 
   /* 控制面板 → 左側滑入抽屜 */
@@ -82,13 +83,13 @@ body {
   }
   body.drawer-open .drawer-backdrop { display: block; }
 
-  /* 底部行動工具列 */
+  /* 頂部行動工具列 */
   .mobile-bar {
     display: flex; gap: 10px;
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    position: fixed; left: 0; right: 0; top: 0; z-index: 40;
+    padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
     background: rgba(12,17,28,.94);
-    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   }
   .mobile-bar .btn { flex: 1; padding: 12px; font-size: 15px; font-weight: 800; }
@@ -225,7 +226,10 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 }
 .modal-overlay.hidden { display: none; }
 .modal {
-  width: min(760px, 100%); max-height: 86vh;
+  /* position/height 覆蓋 Bootstrap .modal 的 fixed/top:0/left:0/height:100%，
+     否則 modal 會被釘在左上角而非由 .modal-overlay 的 flex 置中 */
+  position: relative;
+  width: min(760px, 100%); height: auto; max-height: 86vh;
   background: var(--panel-bg); border: 1px solid var(--line); border-radius: 16px;
   display: flex; flex-direction: column; overflow: hidden;
   box-shadow: 0 24px 60px rgba(0,0,0,.6);
@@ -548,10 +552,6 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   cursor: pointer; transition: border-color .12s, background .12s, color .12s;
 }
 .foot-changelog-btn:hover { border-color: var(--accent); background: rgba(47,143,230,.08); }
-/* 手機底部行動工具列會浮在最下方 → 頁尾預留空間避免被遮 */
-@media (max-width: 1024px) {
-  .site-footer { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
-}
 
 /* ===== 版本更新紀錄 Modal（沿用 .modal-overlay/.modal 基底） ===== */
 .changelog-modal { width: min(520px, 100%); }

@@ -962,10 +962,8 @@ function fitStage() {
   // 以 stage 在視窗中的「實際頂端位置」計算可用高度，
   // 自動扣掉上方頂列/分頁列/間距，避免又矮又寬的視窗把卡片頂出畫面（爆版）
   const top = stage.getBoundingClientRect().top;
-  // 手機/平板底部行動工具列會佔位，預留其高度避免卡片被擋
-  const bar = document.getElementById("mobileBar");
-  const barH = bar && getComputedStyle(bar).display !== "none" ? bar.offsetHeight : 0;
-  const availH = Math.max(220, window.innerHeight - top - 20 - barH);
+  // 頂部固定工具列已反映在 stage 的 top 內，不需再額外扣除其高度
+  const availH = Math.max(220, window.innerHeight - top - 20);
   const scale = Math.min(availW / 1080, availH / cardH, 1);
   stage.style.transform = `scale(${scale})`;
   stage.style.width = `${1080 * scale}px`;
