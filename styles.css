@@ -546,6 +546,8 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   justify-content: center;
 }
 .site-footer .foot-sep { color: var(--line); }
+.site-footer .foot-link { color: var(--accent); text-decoration: none; font-weight: 700; }
+.site-footer .foot-link:hover { text-decoration: underline; }
 .foot-changelog-btn {
   background: transparent; border: 1px solid var(--line); border-radius: 999px;
   color: var(--accent); padding: 4px 14px; font-size: 13px; font-weight: 700;
