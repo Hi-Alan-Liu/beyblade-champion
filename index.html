@@ -3,12 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>陀螺配置卡片產生器</title>
+  <title>自製陀螺配置產生器</title>
   <!-- Bootstrap 先載，styles.css 後載以套用我們的主題覆蓋 -->
   <link rel="stylesheet" href="vendor/bootstrap.min.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- 頁首：LOGO + 標題 + 社群介紹 -->
+  <header class="site-header">
+    <div class="brand">
+      <img class="brand-logo" src="assets/brand/logo.avif" alt="自製陀螺配置產生器 LOGO" />
+      <div class="brand-text">
+        <h1 class="brand-title">自製陀螺配置產生器</h1>
+        <p class="brand-tagline">戰鬥陀螺配置卡・線上即時預覽、一鍵輸出 PNG</p>
+      </div>
+    </div>
+
+    <aside class="community" aria-label="社群介紹">
+      <img class="community-img" src="assets/brand/logo.avif" alt="社群介紹圖" />
+      <div class="community-text">
+        <h2 class="community-title">社群介紹</h2>
+        <p class="community-desc" id="communityDesc">
+          歡迎加入我們的戰鬥陀螺同好社群，一起分享配置、賽事與心得！
+          <!-- TODO：把這段換成你的社群實際介紹文字（名稱、宗旨、活動等） -->
+        </p>
+        <a class="community-link" id="communityLink" href="#" target="_blank" rel="noopener noreferrer">加入社群 ↗</a>
+      </div>
+    </aside>
+  </header>
+
   <main class="layout">
     <!-- 左：控制面板 -->
     <section class="controls" id="controls">
@@ -96,6 +119,39 @@
       </div>
     </section>
   </main>
+
+  <!-- 頁尾：學術研究聲明 + 版本更新紀錄入口 -->
+  <footer class="site-footer">
+    <p class="foot-disclaimer">
+      本工具僅供<strong>學術研究與愛好者交流</strong>使用，無任何商業合作或營利行為；
+      所有陀螺名稱、圖像與商標權利均屬原權利人所有。
+    </p>
+    <p class="foot-meta">
+      設計者：<strong>AlanLiu</strong>
+      <span class="foot-sep">·</span>
+      <button type="button" class="foot-changelog-btn" id="btnChangelog">📋 版本更新紀錄</button>
+    </p>
+  </footer>
+
+  <!-- 版本更新紀錄 Modal -->
+  <div class="modal-overlay hidden" id="changelogModal">
+    <div class="modal changelog-modal" role="dialog" aria-modal="true" aria-labelledby="changelogTitle">
+      <div class="modal-head">
+        <h3 id="changelogTitle">版本更新紀錄</h3>
+        <button type="button" class="modal-close" id="btnChangelogClose" aria-label="關閉">✕</button>
+      </div>
+      <div class="changelog-body">
+        <ul class="changelog-list">
+          <li class="changelog-item">
+            <span class="changelog-date">2026 / 06 / 08</span>
+            <ul class="changelog-points">
+              <li>資料表新增 2 張戰刃圖。</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
   <!-- 手機/平板：抽屜遮罩 + 底部行動工具列（桌機隱藏） -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>

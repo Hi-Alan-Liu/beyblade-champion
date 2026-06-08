@@ -36,6 +36,65 @@ body {
 }
 .file-banner strong { color: #fff; }
 
+/* ===== 頁首（LOGO + 標題 + 社群介紹） ===== */
+.site-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 24px; flex-wrap: wrap;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(60% 120% at 0% 0%, rgba(231,197,107,.10), transparent 60%),
+    linear-gradient(180deg, rgba(19,27,43,.9), rgba(12,17,28,.9));
+}
+/* 品牌：LOGO + 標題 */
+.site-header .brand { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.brand-logo {
+  width: 56px; height: 56px; flex: none;
+  object-fit: cover; border-radius: 14px;
+  background: #fff; padding: 4px;
+  border: 1px solid rgba(231,197,107,.5);
+  box-shadow: 0 4px 14px rgba(0,0,0,.4);
+}
+.brand-text { min-width: 0; }
+.brand-title {
+  font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+  font-size: 26px; font-weight: 900; letter-spacing: 2px; line-height: 1.1;
+  color: var(--gold);
+  -webkit-text-stroke: .5px var(--gold-deep); paint-order: stroke fill;
+}
+.brand-tagline { margin-top: 4px; font-size: 13px; color: var(--muted); }
+
+/* 社群介紹卡 */
+.site-header .community {
+  display: flex; align-items: center; gap: 14px;
+  max-width: 460px;
+  padding: 10px 14px;
+  background: var(--panel-bg);
+  border: 1px solid var(--line); border-radius: 14px;
+}
+.community-img {
+  width: 64px; height: 64px; flex: none;
+  object-fit: cover; border-radius: 10px;
+  background: #fff; padding: 4px;
+  border: 1px solid var(--line);
+}
+.community-text { min-width: 0; }
+.community-title { font-size: 14px; font-weight: 800; color: var(--accent); margin-bottom: 2px; }
+.community-desc { font-size: 12.5px; line-height: 1.5; color: var(--text); }
+.community-link {
+  display: inline-block; margin-top: 6px;
+  font-size: 12.5px; font-weight: 700; color: var(--accent-2);
+  text-decoration: none;
+}
+.community-link:hover { text-decoration: underline; }
+
+/* 手機/平板：頁首改為直向堆疊，社群卡撐滿寬 */
+@media (max-width: 1024px) {
+  .site-header { padding: 14px 16px; gap: 14px; }
+  .brand-title { font-size: 22px; }
+  .site-header .community { max-width: none; width: 100%; }
+}
+
 /* ===== 版面 ===== */
 .layout {
   display: grid;
@@ -499,10 +558,60 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   display: flex; align-items: center; justify-content: flex-end; gap: 8px;
 }
 .card .bey-name::before {
-  content: ""; width: 13px; height: 26px;
+  content: ""; width: 13px; height: 16px;
   border: 3px solid var(--gold); border-right: none;
   border-radius: 3px 0 0 3px;        /* 「[」規格括號感，對齊參考圖 */
 }
 /* B1：無名稱時不顯示三角刻度 */
 .card .bey-name:empty::before { display: none; }
+
+/* ===== 頁尾（學術研究聲明 + 更新紀錄入口） ===== */
+.site-footer {
+  margin-top: 8px;
+  padding: 22px 24px calc(22px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px; line-height: 1.7;
+}
+.site-footer .foot-disclaimer {
+  max-width: 760px; margin: 0 auto 8px;
+}
+.site-footer strong { color: var(--text); font-weight: 700; }
+.site-footer .foot-meta {
+  display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  justify-content: center;
+}
+.site-footer .foot-sep { color: var(--line); }
+.foot-changelog-btn {
+  background: transparent; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--accent); padding: 4px 14px; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: border-color .12s, background .12s, color .12s;
+}
+.foot-changelog-btn:hover { border-color: var(--accent); background: rgba(47,143,230,.08); }
+/* 手機底部行動工具列會浮在最下方 → 頁尾預留空間避免被遮 */
+@media (max-width: 1024px) {
+  .site-footer { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+}
+
+/* ===== 版本更新紀錄 Modal（沿用 .modal-overlay/.modal 基底） ===== */
+.changelog-modal { width: min(520px, 100%); }
+.changelog-body { padding: 16px 20px 20px; overflow-y: auto; }
+.changelog-list { list-style: none; margin: 0; padding: 0; }
+.changelog-item {
+  position: relative; padding: 0 0 16px 16px;
+  border-left: 2px solid var(--line);
+}
+.changelog-item:last-child { padding-bottom: 0; }
+.changelog-item::before {
+  content: ""; position: absolute; left: -6px; top: 4px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 0 3px rgba(47,143,230,.18);
+}
+.changelog-date {
+  display: block; font-size: 13px; font-weight: 800;
+  color: var(--gold); letter-spacing: .5px; margin-bottom: 6px;
+}
+.changelog-points { margin: 0; padding-left: 18px; color: var(--text); font-size: 14px; line-height: 1.65; }
+.changelog-points li { margin: 2px 0; }
 

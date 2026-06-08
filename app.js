@@ -885,6 +885,17 @@ function bindEvents() {
   // 任一文字/選單/檔案變動 → 自動暫存（圖片於 FileReader 回呼另存）
   $("controls").addEventListener("input", saveState);
   $("controls").addEventListener("change", saveState);
+
+  // 頁尾：版本更新紀錄 Modal
+  const clModal = $("changelogModal");
+  const openChangelog = () => clModal.classList.remove("hidden");
+  const closeChangelog = () => clModal.classList.add("hidden");
+  $("btnChangelog").addEventListener("click", openChangelog);
+  $("btnChangelogClose").addEventListener("click", closeChangelog);
+  clModal.addEventListener("click", (e) => { if (e.target === clModal) closeChangelog(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !clModal.classList.contains("hidden")) closeChangelog();
+  });
 }
 
 // ===== 預覽縮放 =====
