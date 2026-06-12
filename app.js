@@ -366,6 +366,7 @@ function setPartData(i, part, data) {
   if (inp) inp.value = d.name;
   renderPart(i, part);           // 右側分開 + 左側組裝 + 控制格縮圖（含 CX）
   renderBeyName(i);
+  layoutRow(i);                  // 合體型留空時收合分欄，避免中間空洞
   saveState();
 }
 
@@ -546,6 +547,30 @@ function renderPart(i, part) {
   renderSlot(i, part);
 }
 
+// 依「實際有的部件」排卡片列：合體型(固鎖/軸心可留空)時不留中間空洞，
+// 有的部件平均分欄（3→各⅓、2→各½、1→置中）。非合體型維持原本三欄版型。
+function layoutRow(i) {
+  const blade = $(`part-${i}-blade`);
+  const row = blade && blade.parentElement;          // .bey-row
+  if (!row) return;
+  const b = (state.beys && state.beys[i]) || {};
+  const has = (part) => {
+    const d = b[part];
+    if (!d) return false;
+    return part === "blade" ? !!(d.cx || d.img) : !!d.img;
+  };
+  const order = ["blade", "ratchet", "bit"];
+  const present = order.filter(has);
+  const fused = !!(b.blade && b.blade.fused);
+  // 只有合體型、且確實有部件留空（但非全空）時才收合
+  const collapse = fused && present.length > 0 && present.length < order.length;
+  order.forEach((p) => {
+    const cell = $(`part-${i}-${p}`);
+    if (cell) cell.style.display = collapse && !has(p) ? "none" : "";
+  });
+  row.style.gridTemplateColumns = collapse ? `repeat(${present.length}, 1fr)` : "";
+}
+
 function imgSrc(i, part) {
   const el = $(`img-${i}-${part}`);
   return el && el.style.display !== "none" ? el.getAttribute("src") || "" : "";
@@ -672,6 +697,7 @@ function loadCardToDOM(c) {
       renderPart(i, p);
     });
     renderBeyName(i);
+    layoutRow(i);                // 合體型留空時收合分欄，避免中間空洞
   });
   applyRank(); applyNickColor(); applySize(); applyShape();
 }
