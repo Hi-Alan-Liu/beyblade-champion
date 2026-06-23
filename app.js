@@ -202,6 +202,7 @@ function openGallery(bey, part) {
   }
   renderGalleryGrid();
   $("galleryModal").classList.remove("hidden");
+  document.body.classList.add("modal-open");   // 開 Modal：隱藏頁面頂部工具列、避免透出重疊
   $("galSearch").focus();
 }
 
@@ -223,7 +224,7 @@ function markActiveTab() {
   );
 }
 
-function closeGallery() { $("galleryModal").classList.add("hidden"); }
+function closeGallery() { $("galleryModal").classList.add("hidden"); document.body.classList.remove("modal-open"); }
 
 function renderGalleryGrid() {
   const grid = $("galGrid");
@@ -1147,8 +1148,8 @@ function bindEvents() {
 
   // 頁尾：版本更新紀錄 Modal
   const clModal = $("changelogModal");
-  const openChangelog = () => clModal.classList.remove("hidden");
-  const closeChangelog = () => clModal.classList.add("hidden");
+  const openChangelog = () => { clModal.classList.remove("hidden"); document.body.classList.add("modal-open"); };
+  const closeChangelog = () => { clModal.classList.add("hidden"); document.body.classList.remove("modal-open"); };
   $("btnChangelog").addEventListener("click", openChangelog);
   $("btnChangelogClose").addEventListener("click", closeChangelog);
   clModal.addEventListener("click", (e) => { if (e.target === clModal) closeChangelog(); });

@@ -93,6 +93,9 @@ body {
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   }
   .mobile-bar .btn { flex: 1; padding: 12px; font-size: 15px; font-weight: 800; }
+
+  /* 開啟 Modal 時隱藏頂部行動工具列，避免透過遮罩透出、和 Modal 頂部重疊 */
+  body.modal-open .mobile-bar { display: none; }
 }
 
 /* ===== 控制面板 ===== */
@@ -225,15 +228,16 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 /* ===== 選圖庫 Modal ===== */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 100;
-  background: rgba(0,0,0,.6); backdrop-filter: blur(2px);
-  display: flex; align-items: center; justify-content: center; padding: 24px;
+  background: rgba(0,0,0,.78); backdrop-filter: blur(4px);   /* 加深遮罩：背景頁面/工具列不干擾 */
+  display: flex; align-items: center; justify-content: center;
+  padding: max(32px, env(safe-area-inset-top)) 24px max(32px, env(safe-area-inset-bottom)); /* 上下多留白，Modal 不貼滿 */
 }
 .modal-overlay.hidden { display: none; }
 .modal {
   /* position/height 覆蓋 Bootstrap .modal 的 fixed/top:0/left:0/height:100%，
      否則 modal 會被釘在左上角而非由 .modal-overlay 的 flex 置中 */
   position: relative;
-  width: min(760px, 100%); height: auto; max-height: 86vh;
+  width: min(820px, 100%); height: auto; max-height: 86vh;
   background: var(--panel-bg); border: 1px solid var(--line); border-radius: 16px;
   display: flex; flex-direction: column; overflow: hidden;
   box-shadow: 0 24px 60px rgba(0,0,0,.6);
@@ -261,14 +265,14 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 .modal-select[hidden] { display: none; }
 .modal-hint { padding: 6px 18px 0; font-size: 12px; color: var(--accent); min-height: 0; }
 .modal-grid {
-  flex: 1; overflow-y: auto; padding: 14px 18px;
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px;
+  flex: 1; overflow-y: auto; padding: 16px 18px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 14px;
   align-content: start;
 }
 .modal-empty { color: var(--muted); font-size: 14px; grid-column: 1 / -1; text-align: center; padding: 24px; }
 .gitem {
   background: #0e0e13; border: 1px solid var(--line); border-radius: 10px;
-  cursor: pointer; padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  cursor: pointer; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px;
   transition: border-color .12s, transform .08s;
 }
 .gitem:hover { border-color: var(--accent); transform: translateY(-2px); }
@@ -504,10 +508,10 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 /* BX/UX/聯名 上蓋(單圖)稍微縮小至 80%；CX 組合上蓋(cx-stack)不受影響 */
 .card .part-blade > img { max-width: 80%; max-height: 80%; }
 
-/* 收合為兩件時：左件靠左、右件靠右，各自離卡片邊緣保留 10%、中間大留白
+/* 收合為兩件時：左件靠右、右件靠左（往中央靠），各自離中線保留 10% padding
    （layoutRow 標記 cl-first/cl-last） */
-.card .part.cl-first { justify-content: flex-start; padding-left: 10%; }
-.card .part.cl-last  { justify-content: flex-end;   padding-right: 10%; }
+.card .part.cl-first { justify-content: flex-end;   padding-right: 10%; }
+.card .part.cl-last  { justify-content: flex-start; padding-left: 10%; }
 
 /* 卡片預覽零件可點 → 開該零件選圖 Modal（hover 提示，僅 :hover 不影響匯出） */
 .card .part[data-part] { cursor: pointer; border-radius: 12px; transition: background .12s, box-shadow .12s; }
