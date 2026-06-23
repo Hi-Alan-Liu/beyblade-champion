@@ -171,6 +171,21 @@ function partLabel(part) {
   return p ? p.label : part;
 }
 
+// 開/關 Modal 的共用狀態：鎖定 body 捲動並補償捲軸寬度。
+// 移除背景捲軸後，固定遮罩才能涵蓋「整個視窗寬」、讓 Modal 真正置中（不再因 body 捲軸而整體偏左）；
+// padding-right 補上捲軸寬度，避免背景內容因捲軸消失而向右跳動。
+function setModalOpen(open) {
+  const body = document.body;
+  if (open) {
+    const sw = window.innerWidth - document.documentElement.clientWidth; // body 捲軸寬度
+    if (sw > 0) body.style.paddingRight = sw + "px";
+    body.classList.add("modal-open");
+  } else {
+    body.classList.remove("modal-open");
+    body.style.paddingRight = "";
+  }
+}
+
 function openGallery(bey, part) {
   if (!BeyDB || !BeyDB.ready) { alert("圖庫尚未載入（assets/db.bundle.js）"); return; }
   galTarget = { bey: Number(bey), part, system: null };
@@ -202,7 +217,7 @@ function openGallery(bey, part) {
   }
   renderGalleryGrid();
   $("galleryModal").classList.remove("hidden");
-  document.body.classList.add("modal-open");   // 開 Modal：隱藏頁面頂部工具列、避免透出重疊
+  setModalOpen(true);   // 鎖定背景捲動 + 隱藏頂部工具列，並讓 Modal 真正置中
   $("galSearch").focus();
 }
 
@@ -224,7 +239,7 @@ function markActiveTab() {
   );
 }
 
-function closeGallery() { $("galleryModal").classList.add("hidden"); document.body.classList.remove("modal-open"); }
+function closeGallery() { $("galleryModal").classList.add("hidden"); setModalOpen(false); }
 
 function renderGalleryGrid() {
   const grid = $("galGrid");
@@ -1153,8 +1168,8 @@ function bindEvents() {
 
   // 頁尾：版本更新紀錄 Modal
   const clModal = $("changelogModal");
-  const openChangelog = () => { clModal.classList.remove("hidden"); document.body.classList.add("modal-open"); };
-  const closeChangelog = () => { clModal.classList.add("hidden"); document.body.classList.remove("modal-open"); };
+  const openChangelog = () => { clModal.classList.remove("hidden"); setModalOpen(true); };
+  const closeChangelog = () => { clModal.classList.add("hidden"); setModalOpen(false); };
   $("btnChangelog").addEventListener("click", openChangelog);
   $("btnChangelogClose").addEventListener("click", closeChangelog);
   clModal.addEventListener("click", (e) => { if (e.target === clModal) closeChangelog(); });

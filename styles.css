@@ -233,6 +233,9 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   padding: max(32px, env(safe-area-inset-top)) 24px max(32px, env(safe-area-inset-bottom)); /* 上下多留白，Modal 不貼滿 */
 }
 .modal-overlay.hidden { display: none; }
+/* 開 Modal 時鎖定背景捲動：移除 body 捲軸 → 固定遮罩涵蓋整個視窗、Modal 真正置中
+   （JS setModalOpen 會補 padding-right 避免背景跳動） */
+body.modal-open { overflow: hidden; }
 .modal {
   /* position/height 覆蓋 Bootstrap .modal 的 fixed/top:0/left:0/height:100%，
      否則 modal 會被釘在左上角而非由 .modal-overlay 的 flex 置中 */
