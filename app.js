@@ -373,7 +373,8 @@ function setPartData(i, part, data) {
   saveState();
 }
 
-function clearSlot(i, part) { setPartData(i, part, blankPart()); }
+// 清除此格 = 刻意把該部件設為空 → 收合時隱藏該欄（emptied 旗標）
+function clearSlot(i, part) { setPartData(i, part, { ...blankPart(), emptied: true }); }
 
 // 更新左側控制格的縮圖 / 空狀態 / 名稱
 function renderSlot(i, part) {
@@ -681,9 +682,9 @@ function renderPart(i, part) {
   renderSlot(i, part);
 }
 
-// 依「實際有的部件」排卡片列：有零件留空時不留中間空洞，剩餘零件向中央靠攏。
-// 收合為兩件時，左件靠右、右件靠左（cl-first/cl-last），讓兩零件更靠近；
-// 名稱仍以 grid-column:1/-1 跨滿整列、維持靠右對齊。非留空維持原本三欄版型。
+// 排卡片列：只隱藏「刻意清空(emptied)或合體型」的空欄，讓版面收合靠攏；
+// 尚未填的空格維持顯示為佔位框、可繼續點擊新增（不會因填了一個就把其他收掉）。
+// 收合成兩件時標記 cl-first/cl-last 控制靠攏；名稱以 grid-column:1/-1 跨滿整列、靠右對齊。
 function layoutRow(i) {
   const blade = $(`part-${i}-blade`);
   const row = blade && blade.parentElement;          // .bey-row
@@ -694,24 +695,26 @@ function layoutRow(i) {
     if (!d) return false;
     return part === "blade" ? !!(d.cx || d.img) : !!d.img;
   };
+  const fused = !!(b.blade && b.blade.fused);
+  // 隱藏(收合)條件：該欄無內容，且(合體型 或 被使用者清除此格)。未填的空格不隱藏。
+  const hidden = (part) => !has(part) && (fused || !!(b[part] && b[part].emptied));
   const order = ["blade", "ratchet", "bit"];
-  const present = order.filter(has);
-  // 只要有部件留空（但非全空）就收合，讓剩餘零件靠攏置中（不再限定合體型）
-  const collapse = present.length > 0 && present.length < order.length;
+  const visible = order.filter((p) => !hidden(p));
+  const collapse = visible.length > 0 && visible.length < order.length;
   order.forEach((p) => {
     const cell = $(`part-${i}-${p}`);
     if (!cell) return;
-    cell.style.display = collapse && !has(p) ? "none" : "";
+    cell.style.display = hidden(p) ? "none" : "";
     cell.classList.remove("cl-first", "cl-last");
   });
-  // 收合成兩件時，標記首/尾可見零件 → CSS 讓兩者向中央靠攏
-  if (collapse && present.length === 2) {
-    const first = $(`part-${i}-${present[0]}`);
-    const last = $(`part-${i}-${present[1]}`);
+  // 收合成兩欄時，標記首/尾可見欄 → CSS 讓兩者靠攏（左件靠右、右件靠左）
+  if (collapse && visible.length === 2) {
+    const first = $(`part-${i}-${visible[0]}`);
+    const last = $(`part-${i}-${visible[1]}`);
     if (first) first.classList.add("cl-first");
     if (last) last.classList.add("cl-last");
   }
-  row.style.gridTemplateColumns = collapse ? `repeat(${present.length}, 1fr)` : "";
+  row.style.gridTemplateColumns = collapse ? `repeat(${visible.length}, 1fr)` : "";
 }
 
 function imgSrc(i, part) {
@@ -733,7 +736,7 @@ let active = 0;     // 目前編輯的卡 index
 //   group:  系統別 BX/UX/CX（圖庫帶入），自訂上傳為 ""
 // 舊卡片只有 {name,img} 也能載入（normalizePart 會補齊欄位），不會壞資料。
 function blankPart() {
-  return { source: "", key: "", group: "", name: "", img: "" };
+  return { source: "", key: "", group: "", name: "", img: "", emptied: false };
 }
 function normalizePart(p) {
   p = p || {};
@@ -744,6 +747,8 @@ function normalizePart(p) {
     name: p.name || "",
     img: p.img || "",
     fused: !!p.fused, // 合體型上蓋（固鎖/軸心可留空）
+    // 使用者用「清除此格」刻意清空 → 收合時隱藏；有內容(img/cx)則不算清空
+    emptied: !!p.emptied && !p.img && !p.cx,
   };
   // CX 拆解上蓋：無單一圖，由子部件 comps 組成（{component:{key,img,name}}）
   if (p.cx) {

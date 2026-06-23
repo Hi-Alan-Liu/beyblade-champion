@@ -266,7 +266,10 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 .modal-hint { padding: 6px 18px 0; font-size: 12px; color: var(--accent); min-height: 0; }
 .modal-grid {
   flex: 1; overflow-y: auto; padding: 16px 18px;
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 14px;
+  /* auto-fit：填滿格子的欄位撐滿整列、不留右側空縫（避免內容偏左）
+     scrollbar-gutter:stable：固定預留捲軸空間，捲軸出現時版面不跳、不擠壓欄寬 */
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 14px;
+  scrollbar-gutter: stable;
   align-content: start;
 }
 .modal-empty { color: var(--muted); font-size: 14px; grid-column: 1 / -1; text-align: center; padding: 24px; }
