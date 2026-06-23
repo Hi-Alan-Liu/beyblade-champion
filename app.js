@@ -1297,16 +1297,16 @@ document.addEventListener("DOMContentLoaded", init);
         </div>
         <form class="contact-body" id="contactForm" novalidate>
           <p class="contact-intro">想合作、回報問題或單純打聲招呼都歡迎，填好我會盡快回覆你 🙌</p>
-          <label>稱呼
-            <input type="text" id="cTitle" class="contact-input" placeholder="例：先生 / 小姐 / 職稱（選填）" />
-          </label>
-          <label>名字 <span class="req">*</span>
+          <label>
+            <span class="contact-label">名字 <span class="req">*</span></span>
             <input type="text" id="cName" class="contact-input" required placeholder="你的名字" />
           </label>
-          <label>Email <span class="req">*</span>
+          <label>
+            <span class="contact-label">Email <span class="req">*</span></span>
             <input type="email" id="cEmail" class="contact-input" required placeholder="方便我回覆的 Email" />
           </label>
-          <label>想說的話 <span class="req">*</span>
+          <label>
+            <span class="contact-label">想說的話 <span class="req">*</span></span>
             <textarea id="cMessage" class="contact-input" rows="4" required placeholder="想說的話…"></textarea>
           </label>
           <div class="contact-status" id="contactStatus" role="status"></div>
@@ -1344,7 +1344,6 @@ document.addEventListener("DOMContentLoaded", init);
     e.preventDefault();
     const status = document.getElementById("contactStatus");
     const setStatus = (msg, cls) => { status.textContent = msg; status.className = "contact-status" + (cls ? " " + cls : ""); };
-    const title = document.getElementById("cTitle").value.trim();
     const name = document.getElementById("cName").value.trim();
     const email = document.getElementById("cEmail").value.trim();
     const message = document.getElementById("cMessage").value.trim();
@@ -1357,7 +1356,7 @@ document.addEventListener("DOMContentLoaded", init);
     btn.disabled = true; const old = btn.textContent; btn.textContent = "送出中…"; setStatus("");
     try {
       await emailjs.send(CFG.serviceId, CFG.templateId, {
-        from_title: title, from_name: name, reply_to: email, from_email: email, message, site: CFG.site,
+        from_name: name, reply_to: email, from_email: email, message, site: CFG.site,
       });
       document.getElementById("contactForm").reset();
       setStatus("✓ 已送出，感謝你的訊息！我會盡快回覆。", "ok");
