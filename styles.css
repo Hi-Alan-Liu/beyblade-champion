@@ -225,55 +225,32 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 /* slot-name 外觀交給 Bootstrap form-control-sm，這裡只保留格線收縮所需 */
 .slot-name { min-width: 0; }
 
-/* ===== 選圖庫 Modal ===== */
-.modal-overlay {
-  position: fixed; inset: 0; z-index: 100;
-  background: rgba(0,0,0,.78); backdrop-filter: blur(4px);   /* 加深遮罩：背景頁面/工具列不干擾 */
-  display: flex; align-items: center; justify-content: center;
-  padding: max(32px, env(safe-area-inset-top)) 24px max(32px, env(safe-area-inset-bottom)); /* 上下多留白，Modal 不貼滿 */
-}
-.modal-overlay.hidden { display: none; }
-/* 開 Modal 時鎖定背景捲動：移除 body 捲軸 → 固定遮罩涵蓋整個視窗、Modal 真正置中
-   （JS setModalOpen 會補 padding-right 避免背景跳動） */
-body.modal-open { overflow: hidden; }
-.modal {
-  /* position/height 覆蓋 Bootstrap .modal 的 fixed/top:0/left:0/height:100%，
-     否則 modal 會被釘在左上角而非由 .modal-overlay 的 flex 置中 */
-  position: relative;
-  width: min(820px, 100%); height: auto; max-height: 86vh;
-  background: var(--panel-bg); border: 1px solid var(--line); border-radius: 16px;
-  display: flex; flex-direction: column; overflow: hidden;
-  box-shadow: 0 24px 60px rgba(0,0,0,.6);
-}
-.modal-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 18px; border-bottom: 1px solid var(--line);
-}
-.modal-head h3 { font-size: 16px; font-weight: 800; color: var(--accent); }
-.modal-close {
-  background: transparent; border: none; color: var(--muted); cursor: pointer;
-  font-size: 20px; line-height: 1; padding: 2px 6px;
-}
-.modal-close:hover { color: var(--text); }
-.modal-tabs { display: flex; gap: 6px; padding: 12px 18px 0; flex-wrap: wrap; }
+/* ===== 選圖庫 / 更新紀錄 Modal（Bootstrap 官方 modal；data-bs-theme=dark 自動深色） ===== */
+/* 內容沿用 app 深色面板色與主題色，標題用主色 */
+.modal-content { background: var(--panel-bg); border: 1px solid var(--line); }
+.modal-title { font-size: 16px; font-weight: 800; color: var(--accent); }
+.gallery-modal .modal-dialog { max-width: min(860px, 100%); }
+/* footer：自訂上傳靠左、清除/套用靠右 */
+.gallery-modal .modal-footer { justify-content: space-between; }
+/* modal-body 捲動時左右對稱預留捲軸槽位，格線置中不偏左 */
+.gallery-modal .modal-body { scrollbar-gutter: stable both-edges; }
+
+/* 系統別分頁 */
+.modal-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
 .modal-tabs[hidden] { display: none; }
 .modal-tabs .gtab {
   background: #0e0e13; border: 1px solid var(--line); border-radius: 999px;
   color: var(--muted); padding: 5px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
 }
 .modal-tabs .gtab.active { color: #fff; border-color: var(--accent); background: rgba(255,255,255,.05); }
-/* modal 搜尋/下拉外觀交給 Bootstrap，只保留版位邊距 */
-.modal-search { margin: 12px 18px 0; }
-.modal-select { margin: 10px 18px 0; }
+/* 搜尋/下拉外觀交給 Bootstrap，只給間距 */
+.modal-search { margin-bottom: 10px; }
+.modal-select { margin-bottom: 10px; }
 .modal-select[hidden] { display: none; }
-.modal-hint { padding: 6px 18px 0; font-size: 12px; color: var(--accent); min-height: 0; }
+.modal-hint { margin-bottom: 6px; font-size: 12px; color: var(--accent); }
 .modal-grid {
-  flex: 1; overflow-y: auto; padding: 16px 18px;
-  /* auto-fit：填滿格子的欄位撐滿整列、不留右側空縫（避免內容偏左）
-     scrollbar-gutter:stable both-edges：左右對稱預留捲軸槽位，內容置中不偏左、
-     且捲軸出現時版面不跳、不擠壓欄寬 */
+  /* auto-fit：填滿格子的欄位撐滿整列、不留右側空縫（避免內容偏左） */
   display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 14px;
-  scrollbar-gutter: stable both-edges;
   align-content: start;
 }
 .modal-empty { color: var(--muted); font-size: 14px; grid-column: 1 / -1; text-align: center; padding: 24px; }
@@ -287,11 +264,7 @@ body.modal-open { overflow: hidden; }
 .gitem img { width: 100%; aspect-ratio: 1; object-fit: contain; }
 .gitem-name { font-size: 12px; color: var(--text); text-align: center; line-height: 1.2; word-break: break-all; }
 .gitem-key { font-size: 11px; color: var(--muted); }
-.modal-foot {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 12px 18px; border-top: 1px solid var(--line);
-}
-/* modal 底部按鈕外觀交給 Bootstrap btn；上傳鈕內含隱藏 file input 需置中 */
+/* footer 內：上傳鈕(含隱藏 file input)置中、右側按鈕群 */
 .modal-upload { display: inline-flex; align-items: center; }
 .modal-foot-right { display: flex; align-items: center; gap: 8px; }
 .modal-apply[hidden] { display: none; }
@@ -585,9 +558,9 @@ body.modal-open { overflow: hidden; }
 }
 .foot-changelog-btn:hover { border-color: var(--accent); background: rgba(47,143,230,.08); }
 
-/* ===== 版本更新紀錄 Modal（沿用 .modal-overlay/.modal 基底） ===== */
-.changelog-modal { width: min(520px, 100%); }
-.changelog-body { padding: 16px 20px 20px; overflow-y: auto; }
+/* ===== 版本更新紀錄 Modal（Bootstrap modal-dialog） ===== */
+.changelog-modal { max-width: min(520px, 100%); }
+.changelog-body { padding: 16px 20px 20px; }
 .changelog-list { list-style: none; margin: 0; padding: 0; }
 .changelog-item {
   position: relative; padding: 0 0 16px 16px;

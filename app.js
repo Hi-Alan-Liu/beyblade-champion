@@ -126,34 +126,39 @@ function createGalleryModal() {
   if ($("galleryModal")) return;
   const m = document.createElement("div");
   m.id = "galleryModal";
-  m.className = "modal-overlay hidden";
+  m.className = "modal fade gallery-modal";
+  m.tabIndex = -1;
+  m.setAttribute("aria-hidden", "true");
+  m.setAttribute("aria-labelledby", "galTitle");
+  // Bootstrap 官方 modal 結構：背景/ESC/關閉/置中/鎖捲動皆由 Bootstrap 處理
   m.innerHTML = `
-    <div class="modal" role="dialog" aria-modal="true">
-      <div class="modal-head">
-        <h3 id="galTitle">選擇零件</h3>
-        <button type="button" class="modal-close" id="galClose" title="關閉">✕</button>
-      </div>
-      <div class="modal-tabs" id="galTabs"></div>
-      <input type="text" class="modal-search form-control" id="galSearch" placeholder="搜尋名稱 / 代碼…" />
-      <select class="modal-select form-select" id="galSelect" hidden></select>
-      <div class="modal-hint" id="galHint"></div>
-      <div class="modal-grid" id="galGrid"></div>
-      <div class="modal-foot">
-        <label class="modal-upload btn btn-sm btn-outline-primary">⬆ 自訂上傳
-          <input type="file" accept="image/*" id="galUpload" hidden />
-        </label>
-        <div class="modal-foot-right">
-          <button type="button" class="modal-clear btn btn-sm btn-outline-secondary" id="galClear">清除此格</button>
-          <button type="button" class="modal-apply btn btn-sm btn-primary" id="galApply" hidden>套用至卡片</button>
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title" id="galTitle">選擇零件</h3>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-tabs" id="galTabs"></div>
+          <input type="text" class="modal-search form-control" id="galSearch" placeholder="搜尋名稱 / 代碼…" />
+          <select class="modal-select form-select" id="galSelect" hidden></select>
+          <div class="modal-hint" id="galHint"></div>
+          <div class="modal-grid" id="galGrid"></div>
+        </div>
+        <div class="modal-footer">
+          <label class="modal-upload btn btn-sm btn-outline-primary">⬆ 自訂上傳
+            <input type="file" accept="image/*" id="galUpload" hidden />
+          </label>
+          <div class="modal-foot-right">
+            <button type="button" class="modal-clear btn btn-sm btn-outline-secondary" id="galClear">清除此格</button>
+            <button type="button" class="modal-apply btn btn-sm btn-primary" id="galApply" hidden>套用至卡片</button>
+          </div>
         </div>
       </div>
     </div>`;
   document.body.appendChild(m);
-  $("galClose").addEventListener("click", closeGallery);
-  m.addEventListener("click", (e) => { if (e.target === m) closeGallery(); });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !$("galleryModal").classList.contains("hidden")) closeGallery();
-  });
+  // 顯示後自動聚焦搜尋框（Bootstrap 顯示動畫結束才聚焦才有效）
+  m.addEventListener("shown.bs.modal", () => $("galSearch").focus());
   $("galSearch").addEventListener("input", renderGalleryGrid);
   $("galSelect").addEventListener("change", (e) => {
     const key = e.target.value;
@@ -169,21 +174,6 @@ function createGalleryModal() {
 function partLabel(part) {
   const p = PART_DEFS.find((d) => d.key === part);
   return p ? p.label : part;
-}
-
-// 開/關 Modal 的共用狀態：鎖定 body 捲動並補償捲軸寬度。
-// 移除背景捲軸後，固定遮罩才能涵蓋「整個視窗寬」、讓 Modal 真正置中（不再因 body 捲軸而整體偏左）；
-// padding-right 補上捲軸寬度，避免背景內容因捲軸消失而向右跳動。
-function setModalOpen(open) {
-  const body = document.body;
-  if (open) {
-    const sw = window.innerWidth - document.documentElement.clientWidth; // body 捲軸寬度
-    if (sw > 0) body.style.paddingRight = sw + "px";
-    body.classList.add("modal-open");
-  } else {
-    body.classList.remove("modal-open");
-    body.style.paddingRight = "";
-  }
 }
 
 function openGallery(bey, part) {
@@ -216,9 +206,7 @@ function openGallery(bey, part) {
     tabsEl.hidden = true;
   }
   renderGalleryGrid();
-  $("galleryModal").classList.remove("hidden");
-  setModalOpen(true);   // 鎖定背景捲動 + 隱藏頂部工具列，並讓 Modal 真正置中
-  $("galSearch").focus();
+  bootstrap.Modal.getOrCreateInstance($("galleryModal")).show();   // 顯示/背景/置中/鎖捲動由 Bootstrap 處理
 }
 
 // 固鎖/軸心的上拉選單：選項=代碼(+名稱)，預選目前值
@@ -239,7 +227,10 @@ function markActiveTab() {
   );
 }
 
-function closeGallery() { $("galleryModal").classList.add("hidden"); setModalOpen(false); }
+function closeGallery() {
+  const inst = bootstrap.Modal.getInstance($("galleryModal"));
+  if (inst) inst.hide();
+}
 
 function renderGalleryGrid() {
   const grid = $("galGrid");
@@ -1166,16 +1157,10 @@ function bindEvents() {
   $("controls").addEventListener("input", saveState);
   $("controls").addEventListener("change", saveState);
 
-  // 頁尾：版本更新紀錄 Modal
-  const clModal = $("changelogModal");
-  const openChangelog = () => { clModal.classList.remove("hidden"); setModalOpen(true); };
-  const closeChangelog = () => { clModal.classList.add("hidden"); setModalOpen(false); };
-  $("btnChangelog").addEventListener("click", openChangelog);
-  $("btnChangelogClose").addEventListener("click", closeChangelog);
-  clModal.addEventListener("click", (e) => { if (e.target === clModal) closeChangelog(); });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !clModal.classList.contains("hidden")) closeChangelog();
-  });
+  // 頁尾：版本更新紀錄 Modal（Bootstrap 官方 modal 負責背景/ESC/關閉/置中/鎖捲動）
+  $("btnChangelog").addEventListener("click", () =>
+    bootstrap.Modal.getOrCreateInstance($("changelogModal")).show()
+  );
 }
 
 // ===== 預覽縮放 =====
