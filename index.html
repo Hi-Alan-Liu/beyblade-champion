@@ -60,12 +60,24 @@
         <label>人物照片
           <input type="file" id="personFile" class="form-control" accept="image/*" />
         </label>
+        <label class="range-field">
+          <span class="range-head">人物大小 <span class="range-val" id="personScaleVal">100%</span></span>
+          <input type="range" id="personScale" class="form-range" min="0.3" max="3" step="0.05" value="1" />
+        </label>
+        <label class="range-field">
+          <span class="range-head">人物透明度 <span class="range-val" id="personOpacityVal">100%</span></span>
+          <input type="range" id="personOpacity" class="form-range" min="0" max="1" step="0.05" value="1" />
+        </label>
         <label>卡片整體背景（選填）
           <input type="file" id="cardBgFile" class="form-control" accept="image/*" />
         </label>
         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearCardBg">清除卡片背景</button>
         <label>右側面板背景（選填）
           <input type="file" id="bgFile" class="form-control" accept="image/*" />
+        </label>
+        <label class="range-field">
+          <span class="range-head">面板背景透明度 <span class="range-val" id="panelBgOpacityVal">35%</span></span>
+          <input type="range" id="panelBgOpacity" class="form-range" min="0" max="1" step="0.05" value="0.35" />
         </label>
         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearPanelBg">清除面板背景</button>
       </details>

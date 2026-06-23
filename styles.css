@@ -125,6 +125,10 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   display: flex; flex-direction: column; gap: 6px;
   font-size: 13px; font-weight: 600; color: var(--muted);
 }
+/* 滑桿欄位：標題列(含右側百分比數值) + 滑桿 */
+.controls label.range-field { gap: 4px; }
+.controls .range-head { display: flex; justify-content: space-between; align-items: baseline; }
+.controls .range-val { font-weight: 700; color: var(--accent); }
 /* === Bootstrap 主題對齊：把 primary/warning 換成戰鬥陀螺配色 === */
 [data-bs-theme="dark"] {
   --bs-body-bg: var(--bg);
@@ -500,9 +504,10 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 /* BX/UX/聯名 上蓋(單圖)稍微縮小至 80%；CX 組合上蓋(cx-stack)不受影響 */
 .card .part-blade > img { max-width: 80%; max-height: 80%; }
 
-/* 收合為兩件時：左件靠右、右件靠左，兩零件向中央靠攏（layoutRow 標記 cl-first/cl-last） */
-.card .part.cl-first { justify-content: flex-end;  padding-right: 3%; }
-.card .part.cl-last  { justify-content: flex-start; padding-left: 3%; }
+/* 收合為兩件時：各自置中於 50% 半欄（≈25% / 75%），左右分開、中間留白
+   （layoutRow 標記 cl-first/cl-last；padding 微調可控制間距） */
+.card .part.cl-first { justify-content: center; padding-right: 6%; }
+.card .part.cl-last  { justify-content: center; padding-left: 6%; }
 
 /* 卡片預覽零件可點 → 開該零件選圖 Modal（hover 提示，僅 :hover 不影響匯出） */
 .card .part[data-part] { cursor: pointer; border-radius: 12px; transition: background .12s, box-shadow .12s; }

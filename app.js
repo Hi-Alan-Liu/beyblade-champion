@@ -60,6 +60,7 @@ const state = {
   size: "square",
   shape: "full",
   personX: 0, personY: 0, personScale: 1,   // 人像在卡片座標的位移+縮放，由拖曳/縮放調整
+  personOpacity: 1, panelBgOpacity: 0.35,   // 人像 / 面板背景圖透明度（滑桿調整）
   beys: Array.from({ length: BEY_COUNT }, () => ({
     blade: { name: "", img: null },
     ratchet: { name: "", img: null },
@@ -423,8 +424,23 @@ function enableDrops() {
 // 預覽(被 stage 縮放)與匯出(原生 1080×cardH)都一致，無需各自換算。
 function applyPerson() {
   const wrap = $("personWrap");
-  if (wrap) wrap.style.transform =
+  if (!wrap) return;
+  wrap.style.transform =
     `translate(${state.personX || 0}px, ${state.personY || 0}px) scale(${state.personScale || 1})`;
+  wrap.style.opacity = state.personOpacity == null ? 1 : state.personOpacity;
+  // 大小可能由滾輪/雙指改變 → 同步左側滑桿與數值（不覆蓋使用者正在拖的滑桿）
+  const sc = $("personScale"), scv = $("personScaleVal");
+  if (sc && document.activeElement !== sc) sc.value = state.personScale || 1;
+  if (scv) scv.textContent = Math.round((state.personScale || 1) * 100) + "%";
+  const opv = $("personOpacityVal");
+  if (opv) opv.textContent = Math.round((state.personOpacity == null ? 1 : state.personOpacity) * 100) + "%";
+}
+
+// 右側面板背景圖透明度（覆蓋 CSS 預設 .35）
+function applyPanelBgOpacity() {
+  const v = state.panelBgOpacity == null ? 0.35 : state.panelBgOpacity;
+  const el = $("panelBg"); if (el) el.style.opacity = v;
+  const lbl = $("panelBgOpacityVal"); if (lbl) lbl.textContent = Math.round(v * 100) + "%";
 }
 
 const PERSON_SCALE_MIN = 0.3, PERSON_SCALE_MAX = 3;
@@ -749,7 +765,8 @@ function blankCard(rank) {
     title: "", rank, size: "square", shape: "full",
     rankText: r.place, rankColor: r.color, nickColor: "#E7C56B",
     logo: "經典賽", nick: "",
-    person: "", personX: 0, personY: 0, personScale: 1, bg: "", cardBg: "",
+    person: "", personX: 0, personY: 0, personScale: 1, personOpacity: 1,
+    bg: "", panelBgOpacity: 0.35, cardBg: "",
     beys: [0, 1, 2].map(() => ({
       blade: blankPart(), ratchet: blankPart(), bit: blankPart(),
     })),
@@ -773,7 +790,9 @@ function readCardFromDOM() {
     nick: $("nickInput").value,
     person: ($("personImg").style.display !== "none" && $("personImg").getAttribute("src")) || "",
     personX: state.personX || 0, personY: state.personY || 0, personScale: state.personScale || 1,
+    personOpacity: state.personOpacity == null ? 1 : state.personOpacity,
     bg: $("panelBg").style.backgroundImage || "",
+    panelBgOpacity: state.panelBgOpacity == null ? 0.35 : state.panelBgOpacity,
     cardBg: $("cardBg").style.backgroundImage || "",
     beys: [0, 1, 2].map((i) => {
       const o = {};
@@ -812,8 +831,13 @@ function loadCardToDOM(c) {
   $("logoInput").value = c.logo ?? ""; $("logoText").textContent = c.logo ?? "";
   $("nickInput").value = c.nick || ""; $("rankNick").textContent = c.nick || "";
   setPersonImage(c.person || "");
-  state.personX = c.personX || 0; state.personY = c.personY || 0; state.personScale = c.personScale || 1; applyPerson();
+  state.personX = c.personX || 0; state.personY = c.personY || 0; state.personScale = c.personScale || 1;
+  state.personOpacity = c.personOpacity == null ? 1 : c.personOpacity;
+  $("personScale").value = state.personScale; $("personOpacity").value = state.personOpacity;
+  applyPerson();
   $("panelBg").style.backgroundImage = c.bg || "";
+  state.panelBgOpacity = c.panelBgOpacity == null ? 0.35 : c.panelBgOpacity;
+  $("panelBgOpacity").value = state.panelBgOpacity; applyPanelBgOpacity();
   $("cardBg").style.backgroundImage = c.cardBg || "";
   const parts = ["blade", "ratchet", "bit"];
   (c.beys || []).forEach((b, i) => {
@@ -838,9 +862,11 @@ function normalizeCard(c) {
   if (c.rankText == null) c.rankText = rDef.place;
   if (c.rankColor == null) c.rankColor = rDef.color;
   if (c.nickColor == null) c.nickColor = "#E7C56B";
-  if (c.personX == null) c.personX = 0;   // 舊卡無位移/縮放欄位 → 補預設
+  if (c.personX == null) c.personX = 0;   // 舊卡無位移/縮放/透明度欄位 → 補預設
   if (c.personY == null) c.personY = 0;
   if (c.personScale == null) c.personScale = 1;
+  if (c.personOpacity == null) c.personOpacity = 1;
+  if (c.panelBgOpacity == null) c.panelBgOpacity = 0.35;
   const parts = ["blade", "ratchet", "bit"];
   c.beys = (c.beys || []).map((b) => {
     const o = {};
@@ -1051,6 +1077,20 @@ function bindEvents() {
     $("panelBg").style.backgroundImage = "";
     $("bgFile").value = "";
     saveState();
+  });
+
+  // 滑桿：人物大小 / 人物透明度 / 面板背景透明度（saveState 由 #controls input 委派處理）
+  $("personScale").addEventListener("input", (e) => {
+    state.personScale = clampScale(parseFloat(e.target.value));
+    applyPerson();
+  });
+  $("personOpacity").addEventListener("input", (e) => {
+    state.personOpacity = parseFloat(e.target.value);
+    applyPerson();
+  });
+  $("panelBgOpacity").addEventListener("input", (e) => {
+    state.panelBgOpacity = parseFloat(e.target.value);
+    applyPanelBgOpacity();
   });
 
   // 名稱輸入（事件委派）：圖庫選取會自動帶入，使用者仍可手動覆寫
