@@ -1268,3 +1268,110 @@ function showFileProtocolBanner() {
   document.body.insertBefore(bar, document.body.firstChild);
 }
 document.addEventListener("DOMContentLoaded", init);
+
+/* ===== 合作洽詢 / 聯絡我們 Modal（EmailJS）— 兩站共用，僅 site 名稱不同 ===== */
+(function () {
+  // ⚙️ EmailJS 設定：到 https://dashboard.emailjs.com 申請後，把下面三個值換掉。
+  //    收件信箱不用寫在這裡——請在 EmailJS 的 Email Template「To Email」欄位設定你要收信的信箱。
+  //    Template 內請用到這些變數：{{from_title}} {{from_name}} {{reply_to}} {{message}} {{site}}
+  const CFG = {
+    publicKey: "eWdoSraFlshyV0Z7E",
+    serviceId: "service_alan",
+    templateId: "template_alan",
+    site: "陀螺配置產生器",   // 來源網站（會帶進信件，方便分辨來自哪個站）
+  };
+
+  function buildModal() {
+    if (document.getElementById("contactModal")) return;
+    const m = document.createElement("div");
+    m.id = "contactModal";
+    m.className = "contact-overlay hidden";
+    m.setAttribute("role", "dialog");
+    m.setAttribute("aria-modal", "true");
+    m.setAttribute("aria-labelledby", "contactTitle");
+    m.innerHTML = `
+      <div class="contact-modal">
+        <div class="contact-head">
+          <h3 id="contactTitle">合作洽詢 / 聯絡我們</h3>
+          <button type="button" class="contact-close" id="contactClose" aria-label="關閉">✕</button>
+        </div>
+        <form class="contact-body" id="contactForm" novalidate>
+          <p class="contact-intro">想合作、回報問題或單純打聲招呼都歡迎，填好我會盡快回覆你 🙌</p>
+          <label>稱呼
+            <input type="text" id="cTitle" class="contact-input" placeholder="例：先生 / 小姐 / 職稱（選填）" />
+          </label>
+          <label>名字 <span class="req">*</span>
+            <input type="text" id="cName" class="contact-input" required placeholder="你的名字" />
+          </label>
+          <label>Email <span class="req">*</span>
+            <input type="email" id="cEmail" class="contact-input" required placeholder="方便我回覆的 Email" />
+          </label>
+          <label>想說的話 <span class="req">*</span>
+            <textarea id="cMessage" class="contact-input" rows="4" required placeholder="想說的話…"></textarea>
+          </label>
+          <div class="contact-status" id="contactStatus" role="status"></div>
+          <div class="contact-foot">
+            <button type="button" class="contact-btn-cancel" id="contactCancel">取消</button>
+            <button type="submit" class="contact-btn-send" id="contactSend">送出</button>
+          </div>
+        </form>
+      </div>`;
+    document.body.appendChild(m);
+    m.addEventListener("click", (e) => { if (e.target === m) closeContact(); });
+    document.getElementById("contactClose").addEventListener("click", closeContact);
+    document.getElementById("contactCancel").addEventListener("click", closeContact);
+    document.getElementById("contactForm").addEventListener("submit", onContactSubmit);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && isContactOpen()) closeContact(); });
+  }
+
+  function isContactOpen() {
+    const m = document.getElementById("contactModal");
+    return m && !m.classList.contains("hidden");
+  }
+  function openContact() {
+    buildModal();
+    document.getElementById("contactModal").classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+    setTimeout(() => { const el = document.getElementById("cName"); if (el) el.focus(); }, 50);
+  }
+  function closeContact() {
+    const m = document.getElementById("contactModal");
+    if (m) m.classList.add("hidden");
+    document.body.style.overflow = "";
+  }
+
+  async function onContactSubmit(e) {
+    e.preventDefault();
+    const status = document.getElementById("contactStatus");
+    const setStatus = (msg, cls) => { status.textContent = msg; status.className = "contact-status" + (cls ? " " + cls : ""); };
+    const title = document.getElementById("cTitle").value.trim();
+    const name = document.getElementById("cName").value.trim();
+    const email = document.getElementById("cEmail").value.trim();
+    const message = document.getElementById("cMessage").value.trim();
+    if (!name || !email || !message) { setStatus("請填寫名字、Email 與想說的話。", "err"); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setStatus("Email 格式怪怪的，再檢查一下。", "err"); return; }
+    if (!window.emailjs || CFG.publicKey === "YOUR_PUBLIC_KEY") {
+      setStatus("（尚未設定 EmailJS 金鑰，暫時無法送出）", "err"); return;
+    }
+    const btn = document.getElementById("contactSend");
+    btn.disabled = true; const old = btn.textContent; btn.textContent = "送出中…"; setStatus("");
+    try {
+      await emailjs.send(CFG.serviceId, CFG.templateId, {
+        from_title: title, from_name: name, reply_to: email, from_email: email, message, site: CFG.site,
+      });
+      document.getElementById("contactForm").reset();
+      setStatus("✓ 已送出，感謝你的訊息！我會盡快回覆。", "ok");
+    } catch (err) {
+      console.error("EmailJS send failed:", err);
+      setStatus("✕ 送出失敗，請稍後再試。", "err");
+    } finally { btn.disabled = false; btn.textContent = old; }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    if (window.emailjs && CFG.publicKey !== "YOUR_PUBLIC_KEY") {
+      try { emailjs.init({ publicKey: CFG.publicKey }); } catch (e) { /* ignore */ }
+    }
+    const btn = document.getElementById("btnContact");
+    if (btn) btn.addEventListener("click", openContact);
+  });
+})();
