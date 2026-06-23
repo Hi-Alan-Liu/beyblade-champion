@@ -504,10 +504,10 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 /* BX/UX/聯名 上蓋(單圖)稍微縮小至 80%；CX 組合上蓋(cx-stack)不受影響 */
 .card .part-blade > img { max-width: 80%; max-height: 80%; }
 
-/* 收合為兩件時：各自置中於 50% 半欄（≈25% / 75%），左右分開、中間留白
-   （layoutRow 標記 cl-first/cl-last；padding 微調可控制間距） */
-.card .part.cl-first { justify-content: center; padding-right: 6%; }
-.card .part.cl-last  { justify-content: center; padding-left: 6%; }
+/* 收合為兩件時：左件靠左、右件靠右，各自離卡片邊緣保留 10%、中間大留白
+   （layoutRow 標記 cl-first/cl-last） */
+.card .part.cl-first { justify-content: flex-start; padding-left: 10%; }
+.card .part.cl-last  { justify-content: flex-end;   padding-right: 10%; }
 
 /* 卡片預覽零件可點 → 開該零件選圖 Modal（hover 提示，僅 :hover 不影響匯出） */
 .card .part[data-part] { cursor: pointer; border-radius: 12px; transition: background .12s, box-shadow .12s; }
