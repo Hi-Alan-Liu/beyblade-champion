@@ -59,6 +59,7 @@ const state = {
   nickColor: "#E7C56B",
   size: "square",
   shape: "full",
+  personX: 0, personY: 0, personScale: 1,   // 人像在卡片座標的位移+縮放，由拖曳/縮放調整
   beys: Array.from({ length: BEY_COUNT }, () => ({
     blade: { name: "", img: null },
     ratchet: { name: "", img: null },
@@ -105,7 +106,7 @@ function buildBeyControls() {
     row.className = "bey-row";
     row.innerHTML = `
       ${PART_DEFS.map(
-        (p) => `<div class="part part-${p.key}" id="part-${i}-${p.key}">
+        (p) => `<div class="part part-${p.key}" id="part-${i}-${p.key}" data-bey="${i}" data-part="${p.key}" title="點擊選擇${p.label}">
           <img id="img-${i}-${p.key}" alt="" />
           <span class="ph" id="ph-${i}-${p.key}">${p.label}</span>
         </div>`
@@ -417,6 +418,122 @@ function enableDrops() {
   });
 }
 
+// ===== 人像位移（拖曳定位）=====
+// 位移以「卡片座標 px」儲存：套在 #personWrap 的 translate 上，
+// 預覽(被 stage 縮放)與匯出(原生 1080×cardH)都一致，無需各自換算。
+function applyPerson() {
+  const wrap = $("personWrap");
+  if (wrap) wrap.style.transform =
+    `translate(${state.personX || 0}px, ${state.personY || 0}px) scale(${state.personScale || 1})`;
+}
+
+const PERSON_SCALE_MIN = 0.3, PERSON_SCALE_MAX = 3;
+function clampScale(s) { return Math.min(PERSON_SCALE_MAX, Math.max(PERSON_SCALE_MIN, s || 1)); }
+
+// stage 目前的視覺縮放倍率（getBoundingClientRect 反映 transform:scale 後的實際寬）
+function stageScale() {
+  const r = stage.getBoundingClientRect();
+  return (r.width / 1080) || 1;
+}
+
+// 夾住位移，讓人像至少有一段留在卡片內，不會被拖到完全看不見
+function clampPerson(x, y) {
+  const ch = (SIZES[state.size] || SIZES.square).h;
+  const pw = 540, edge = 80;                // personWrap 寬 50%=540，保留 80px 露出
+  const minX = edge - pw, maxX = 1080 - edge;
+  const minY = edge - ch, maxY = 0.94 * ch - edge;
+  return [Math.min(maxX, Math.max(minX, x)), Math.min(maxY, Math.max(minY, y))];
+}
+
+// 人像互動：單指/滑鼠拖曳定位 + 雙指 pinch 縮放 + 桌機滾輪縮放（皆走 pointer/wheel）
+function enablePersonDrag() {
+  const wrap = $("personWrap");
+  const img = $("personImg");
+  if (!wrap) return;
+  const hasPerson = () => img && img.style.display !== "none" && !!img.getAttribute("src");
+  const pts = new Map();                 // 進行中的指標：pointerId -> {x,y}
+  let mode = null;                       // 'drag' | 'pinch'
+  let sc = 1, moved = false;
+  let sx = 0, sy = 0, ox = 0, oy = 0;    // drag 基準
+  let startDist = 0, startScale = 1;     // pinch 基準
+  let saveT = null;
+  const scheduleSave = () => { clearTimeout(saveT); saveT = setTimeout(saveState, 300); };
+  // 從目前指標重設 drag 基準（單指起拖、或從雙指退回單指時用，避免跳動）
+  const resetDrag = (x, y) => { sx = x; sy = y; ox = state.personX || 0; oy = state.personY || 0; sc = stageScale(); };
+
+  wrap.addEventListener("pointerdown", (e) => {
+    if (!hasPerson()) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { wrap.setPointerCapture(e.pointerId); } catch {}
+    e.preventDefault();
+    if (pts.size === 1) {
+      mode = "drag"; moved = false;
+      resetDrag(e.clientX, e.clientY);
+      wrap.classList.add("dragging");
+    } else if (pts.size === 2) {
+      mode = "pinch";
+      const [a, b] = [...pts.values()];
+      startDist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      startScale = state.personScale || 1;
+    }
+  });
+
+  wrap.addEventListener("pointermove", (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (mode === "drag" && pts.size === 1) {
+      const dx = (e.clientX - sx) / sc;    // 螢幕位移 → 卡片座標 px
+      const dy = (e.clientY - sy) / sc;
+      if (Math.abs(dx) + Math.abs(dy) > 2) moved = true;
+      const [nx, ny] = clampPerson(ox + dx, oy + dy);
+      state.personX = nx; state.personY = ny;
+      applyPerson();
+    } else if (mode === "pinch" && pts.size >= 2) {
+      const [a, b] = [...pts.values()];
+      const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      state.personScale = clampScale(startScale * (dist / startDist));
+      moved = true;
+      applyPerson();
+    }
+  });
+
+  const end = (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.delete(e.pointerId);
+    try { wrap.releasePointerCapture(e.pointerId); } catch {}
+    if (pts.size === 1) {                  // 雙指退回單指：重設基準續拖
+      const [only] = [...pts.values()];
+      mode = "drag"; resetDrag(only.x, only.y);
+    } else if (pts.size === 0) {
+      mode = null;
+      wrap.classList.remove("dragging");
+      if (moved) saveState();              // 真的有動作才存檔
+    }
+  };
+  wrap.addEventListener("pointerup", end);
+  wrap.addEventListener("pointercancel", end);
+
+  // 桌機：滾輪縮放（向上放大、向下縮小）
+  wrap.addEventListener("wheel", (e) => {
+    if (!hasPerson()) return;
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.06 : 1 / 1.06;
+    state.personScale = clampScale((state.personScale || 1) * factor);
+    applyPerson();
+    scheduleSave();
+  }, { passive: false });
+}
+
+// 設定人像圖：含 has-person 類別切換（控制游標/touch-action）與操作提示
+function setPersonImage(url) {
+  setImg($("personImg"), null, url || "");
+  const wrap = $("personWrap");
+  if (wrap) {
+    wrap.classList.toggle("has-person", !!url);
+    wrap.title = url ? "拖曳移動位置 · 滾輪/雙指縮放" : "";
+  }
+}
+
 // ===== 套用匯出尺寸 =====
 function applySize() {
   const s = SIZES[state.size] || SIZES.square;
@@ -547,8 +664,9 @@ function renderPart(i, part) {
   renderSlot(i, part);
 }
 
-// 依「實際有的部件」排卡片列：合體型(固鎖/軸心可留空)時不留中間空洞，
-// 有的部件平均分欄（3→各⅓、2→各½、1→置中）。非合體型維持原本三欄版型。
+// 依「實際有的部件」排卡片列：有零件留空時不留中間空洞，剩餘零件向中央靠攏。
+// 收合為兩件時，左件靠右、右件靠左（cl-first/cl-last），讓兩零件更靠近；
+// 名稱仍以 grid-column:1/-1 跨滿整列、維持靠右對齊。非留空維持原本三欄版型。
 function layoutRow(i) {
   const blade = $(`part-${i}-blade`);
   const row = blade && blade.parentElement;          // .bey-row
@@ -561,13 +679,21 @@ function layoutRow(i) {
   };
   const order = ["blade", "ratchet", "bit"];
   const present = order.filter(has);
-  const fused = !!(b.blade && b.blade.fused);
-  // 只有合體型、且確實有部件留空（但非全空）時才收合
-  const collapse = fused && present.length > 0 && present.length < order.length;
+  // 只要有部件留空（但非全空）就收合，讓剩餘零件靠攏置中（不再限定合體型）
+  const collapse = present.length > 0 && present.length < order.length;
   order.forEach((p) => {
     const cell = $(`part-${i}-${p}`);
-    if (cell) cell.style.display = collapse && !has(p) ? "none" : "";
+    if (!cell) return;
+    cell.style.display = collapse && !has(p) ? "none" : "";
+    cell.classList.remove("cl-first", "cl-last");
   });
+  // 收合成兩件時，標記首/尾可見零件 → CSS 讓兩者向中央靠攏
+  if (collapse && present.length === 2) {
+    const first = $(`part-${i}-${present[0]}`);
+    const last = $(`part-${i}-${present[1]}`);
+    if (first) first.classList.add("cl-first");
+    if (last) last.classList.add("cl-last");
+  }
   row.style.gridTemplateColumns = collapse ? `repeat(${present.length}, 1fr)` : "";
 }
 
@@ -623,7 +749,7 @@ function blankCard(rank) {
     title: "", rank, size: "square", shape: "full",
     rankText: r.place, rankColor: r.color, nickColor: "#E7C56B",
     logo: "經典賽", nick: "",
-    person: "", bg: "", cardBg: "",
+    person: "", personX: 0, personY: 0, personScale: 1, bg: "", cardBg: "",
     beys: [0, 1, 2].map(() => ({
       blade: blankPart(), ratchet: blankPart(), bit: blankPart(),
     })),
@@ -646,6 +772,7 @@ function readCardFromDOM() {
     logo: $("logoInput").value,
     nick: $("nickInput").value,
     person: ($("personImg").style.display !== "none" && $("personImg").getAttribute("src")) || "",
+    personX: state.personX || 0, personY: state.personY || 0, personScale: state.personScale || 1,
     bg: $("panelBg").style.backgroundImage || "",
     cardBg: $("cardBg").style.backgroundImage || "",
     beys: [0, 1, 2].map((i) => {
@@ -684,7 +811,8 @@ function loadCardToDOM(c) {
   state.shape = "full";
   $("logoInput").value = c.logo ?? ""; $("logoText").textContent = c.logo ?? "";
   $("nickInput").value = c.nick || ""; $("rankNick").textContent = c.nick || "";
-  setImg($("personImg"), null, c.person || "");
+  setPersonImage(c.person || "");
+  state.personX = c.personX || 0; state.personY = c.personY || 0; state.personScale = c.personScale || 1; applyPerson();
   $("panelBg").style.backgroundImage = c.bg || "";
   $("cardBg").style.backgroundImage = c.cardBg || "";
   const parts = ["blade", "ratchet", "bit"];
@@ -710,6 +838,9 @@ function normalizeCard(c) {
   if (c.rankText == null) c.rankText = rDef.place;
   if (c.rankColor == null) c.rankColor = rDef.color;
   if (c.nickColor == null) c.nickColor = "#E7C56B";
+  if (c.personX == null) c.personX = 0;   // 舊卡無位移/縮放欄位 → 補預設
+  if (c.personY == null) c.personY = 0;
+  if (c.personScale == null) c.personScale = 1;
   const parts = ["blade", "ratchet", "bit"];
   c.beys = (c.beys || []).map((b) => {
     const o = {};
@@ -894,7 +1025,7 @@ function bindEvents() {
 
   $("personFile").addEventListener("change", (e) => {
     const f = e.target.files[0];
-    if (f) readImage(f, (url) => { setImg($("personImg"), null, url); saveState(); });
+    if (f) readImage(f, (url) => { setPersonImage(url); saveState(); });
   });
   $("bgFile").addEventListener("change", (e) => {
     const f = e.target.files[0];
@@ -931,11 +1062,17 @@ function bindEvents() {
     if (cards[active] && cards[active].beys[i] && cards[active].beys[i][part]) cards[active].beys[i][part].name = t.value;
     renderBeyName(i);
   });
-  // 點圖庫格 → 開選圖庫 Modal
+  // 點左側圖庫格 → 開選圖庫 Modal
   $("beyControls").addEventListener("click", (e) => {
     const btn = e.target.closest(".slot-pick");
     if (!btn) return;
     openGallery(btn.dataset.bey, btn.dataset.part);
+  });
+  // 點卡片預覽上的零件（含空格）→ 直接開該零件的選圖 Modal
+  $("rows").addEventListener("click", (e) => {
+    const cell = e.target.closest(".part[data-part]");
+    if (!cell) return;
+    openGallery(cell.dataset.bey, cell.dataset.part);
   });
 
   $("btnDownload").addEventListener("click", downloadCard);
@@ -1061,6 +1198,7 @@ function init() {
   createGalleryModal();
   bindEvents();
   enableDrops();
+  enablePersonDrag();
   if (!restoreState()) {            // 沒有暫存 → 開一張空白卡
     cards = [blankCard()];
     active = 0;
