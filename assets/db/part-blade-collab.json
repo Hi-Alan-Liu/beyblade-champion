@@ -1,16 +1,79 @@
 {
+    "SgSp": {
+        "group": "hasbro",
+        "names": {
+            "jap": "ジークスペリオン",
+            "eng": "SiegSuperion",
+            "hasbro": "Suppress Superion",
+            "chi": "",
+            "aka": ""
+        },
+        "stat": [""],
+        "desc": "(0-70LP tent.)",
+        "attr": ["bal","right","BX","expand","bbb"]
+    },
+    "JgSz": {
+        "group": "hasbro",
+        "names": {
+            "jap": "",
+            "eng": "JaguarSeize",
+            "chi": "",
+            "aka": "美洲豹"
+        },
+        "stat": [""],
+        "desc": "(HN tent.)",
+        "attr": ["def","right","UX","fused"]
+    },
+    "CyEy": {
+        "group": "hasbro",
+        "names": {
+            "jap": "サイクロプスアイ",
+            "eng": "CyclopsEye",
+            "hasbro": "Glare Cyclops",
+            "chi": "",
+            "aka": "獨眼"
+        },
+        "stat": [""],
+        "desc": "(7-55FB tent.)",
+        "attr": ["sta","right","BX","expand"]
+    },
+    "HlNt": {
+        "group": "hasbro",
+        "names": {
+            "jap": "ヘルズネザー",
+            "eng": "HellsNether",
+            "hasbro": "Nether Incendio",
+            "chi": "",
+            "aka": "煉獄 惡魔"
+        },
+        "stat": [""],
+        "desc": "(Z tent.)",
+        "attr": ["bal","right","UX","fused"]
+    },
+    "CrCl": {
+        "group": "hasbro",
+        "names": {
+            "jap": "クラブクランプ",
+            "eng": "CrabClamp",
+            "chi": "",
+            "aka": "蟹"
+        },
+        "stat": ["28-"],
+        "desc": "(9-65S tent.)",
+        "attr": ["def","right","BX"],
+        "from": "WyGl"
+    },
     "HrSh": {
         "group": "hasbro",
         "names": {
             "jap": "ホルスシャッター",
             "eng": "HorusShatter",
             "chi": "",
-            "aka": ""
+            "aka": "荷魯斯 隼"
         },
         "stat": [""],
-        "desc": "",
-        "attr": ["sta","right","BX","expand"],
-        "aka": "荷魯斯 隼"
+        "desc": "(9-65GB tent.)",
+        "attr": ["sta","right","BX","expand"]
     },
     "BtGs": {
         "group": "hasbro",
@@ -21,7 +84,7 @@
             "aka": "蝙蝠"
         },
         "stat": ["36+"],
-        "desc": "（此乃AI臨時圖）",
+        "desc": "(3-85GP tent.)",
         "attr": ["bal","right","BX"],
         "from": "WhWv"
     },
@@ -34,7 +97,7 @@
             "aka": "護盾城牆"
         },
         "stat": ["33-"],
-        "desc": "",
+        "desc": "(GB tent.)",
         "attr": ["def","right","UX","fused"]
     },
     "ShSr": {
@@ -42,24 +105,13 @@
         "names": {
             "jap": "シノビシュリケン",
             "eng": "ShinobiShuriken",
+            "hasbro": "Cutter Shinobi",
             "chi": "",
             "aka": "忍者飛鏢 手裡劍"
         },
         "stat": ["37+"],
-        "desc": "",
+        "desc": "(LF tent.)",
         "attr": ["bal","right","fused","UX"]
-    },
-    "HvRn": {
-        "group": "hasbro",
-        "names": {
-            "jap": "ヘブンズリング",
-            "eng": "HeavensRing",
-            "chi": "",
-            "aka": "天使 光環"
-        },
-        "stat": ["37+"],
-        "desc": "（此乃AI臨時圖）",
-        "attr": ["def","right","BX","expand"]
     },
     "VkHc": {
         "group": "hasbro",
@@ -69,7 +121,7 @@
             "chi": ""
         },
         "stat": ["33-"],
-        "desc": "",
+        "desc": "(4-55O tent.)",
         "attr": ["bal","right","UX"],
         "from": "HlHm"
     },
@@ -81,7 +133,7 @@
             "chi": ""
         },
         "stat": ["28-"],
-        "desc": "",
+        "desc": "(9-60GB tent.)",
         "attr": ["def","right","UX"],
         "from": "ShSh"
     },
@@ -93,7 +145,7 @@
             "chi": ""
         },
         "stat": ["31+"],
-        "desc": "",
+        "desc": "(3-60GB tent.)",
         "attr": ["def","right","BX"],
         "from": "WyGl"
     },
@@ -241,6 +293,17 @@
         "attr": ["def","right","BX","marvel"],
         "from": "KnLn"
     },
+    "Hulk": {
+        "group": "collab",
+        "names": {
+            "jap": "ハルク",
+            "eng": "Hulk",
+            "chi": "浩克"
+        },
+        "stat": ["33-"],
+        "attr": ["def","right","BX","marvel"],
+        "from": "BlSh"
+    },
     "Redh": {
         "group": "collab",
         "names": {
@@ -270,7 +333,7 @@
             "eng": "Spiderman",
             "chi": "蜘蛛俠 蜘蛛人"
         },
-        "stat": ["33="],
+        "stat": ["33+"],
         "attr": ["sta","right","BX","marvel"],
         "from": "VpTl"
     },
@@ -400,7 +463,7 @@
         "names": {
             "jap": "グローグー",
             "eng": "Grogu",
-            "chi": ""
+            "chi": "古古"
         },
         "stat": ["32="],
         "attr": ["def","right","BX","star-wars"],
