@@ -130,6 +130,8 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 }
 /* 滑桿欄位：標題列(含右側百分比數值) + 滑桿 */
 .controls label.range-field { gap: 4px; }
+/* 字型欄位：緊湊、標題偏小，與各文字欄位並排 */
+.controls label.font-field { gap: 4px; margin-top: -2px; font-size: 12px; }
 .controls .range-head { display: flex; justify-content: space-between; align-items: baseline; }
 .controls .range-val { font-weight: 700; color: var(--accent); }
 /* === Bootstrap 主題對齊：把 primary/warning 換成戰鬥陀螺配色 === */
@@ -370,7 +372,7 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   pointer-events: none;
 }
 .card .title-text {
-  font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+  font-family: var(--font-title, "Noto Serif TC", "Songti TC", "PMingLiU", serif);
   font-size: 78px; font-weight: 900; letter-spacing: 8px; line-height: 1;
   color: var(--gold);
   -webkit-text-stroke: 1px var(--gold-deep); paint-order: stroke fill;
@@ -418,14 +420,14 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   pointer-events: none;    /* 純展示文字，不攔截人像拖曳 */
 }
 .card .rank-place {
-  font-family: "Noto Serif TC", "Georgia", serif;
+  font-family: var(--font-rank, "Noto Serif TC", "Georgia", serif);
   font-size: 58px; font-weight: 800; font-style: italic;
   color: var(--rank-color, var(--gold)); letter-spacing: 1px;
   text-shadow: 0 3px 12px rgba(0,0,0,.6);
 }
 .card .rank-name {
   margin-top: 6px; line-height: 1.04;
-  font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+  font-family: var(--font-nick, "Noto Serif TC", "Songti TC", "PMingLiU", serif);
   font-size: 88px; font-weight: 900; color: var(--nick-color, var(--gold));
   -webkit-text-stroke: 1px var(--gold-deep); paint-order: stroke fill;
   text-shadow: 0 3px 0 rgba(80,52,8,.45), 0 8px 20px rgba(0,0,0,.65);
@@ -519,7 +521,7 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   grid-column: 1 / -1;
   text-align: right;
   font-size: 32px; font-weight: 800; color: #fff;
-  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  font-family: var(--font-beyname, "Noto Sans TC", "Microsoft JhengHei", sans-serif);
   padding-right: 4px;
   display: flex; align-items: center; justify-content: flex-end; gap: 8px;
 }
@@ -533,11 +535,10 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 
 /* ===== 冠軍榜版型（進階擴充；data-template="champion"）=====
    經典版型完全不受影響：所有冠軍榜樣式都限定在 [data-template="champion"] 之下，
-   冠軍榜專屬元素（左上角標題塊 / 會場 / 排名編號）預設隱藏，僅此版型顯示。 */
-.champ-topleft, .champ-venue, .card .bey-no { display: none; }
+   冠軍榜專屬元素（左上角標題塊 / 會場）預設隱藏，僅此版型顯示。 */
+.champ-topleft, .champ-venue { display: none; }
 .card[data-template="champion"] .champ-topleft { display: flex; }
 .card[data-template="champion"] .champ-venue { display: block; }
-.card[data-template="champion"] .bey-no { display: flex; }
 /* 冠軍榜時隱藏經典版的置中標題與左下名次 */
 .card[data-template="champion"] .title,
 .card[data-template="champion"] .rank,
@@ -550,7 +551,7 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   max-width: 40%; pointer-events: none;   /* 收窄避免與右側面板重疊 */
 }
 .champ-title {
-  font-family: "Anton", "Noto Sans TC", "Arial Black", sans-serif;
+  font-family: var(--font-title, "Anton", "Noto Sans TC", "Arial Black", sans-serif);
   font-size: calc(72px * var(--title-scale, 1)); line-height: .94;
   letter-spacing: 2px; color: var(--title-color, #E7C56B);
   text-shadow: 0 3px 0 rgba(0,0,0,.35), 0 8px 22px rgba(0,0,0,.6);
@@ -558,7 +559,7 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 }
 .champ-title:empty { display: none; }
 .champ-date {
-  font-family: "Anton", "Noto Sans TC", sans-serif;
+  font-family: var(--font-date, "Anton", "Noto Sans TC", sans-serif);
   font-size: calc(30px * var(--date-scale, 1)); letter-spacing: 3px; line-height: 1.2;
   color: var(--date-color, #fff);
   background: rgba(0,0,0,.42); padding: 2px 16px;
@@ -578,7 +579,7 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   clip-path: polygon(6% 0, 94% 0, 100% 50%, 94% 100%, 6% 100%, 0 50%);
 }
 .champ-badge span {
-  font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+  font-family: var(--font-badge, "Noto Serif TC", "Songti TC", "PMingLiU", serif);
   font-weight: 900; font-size: 78px; letter-spacing: 8px; line-height: 1;
   color: var(--gold);
   -webkit-text-stroke: 1px var(--gold-deep); paint-order: stroke fill;
@@ -599,44 +600,89 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 .champ-venue {
   position: absolute; left: 50px; bottom: 46px; z-index: 5;
   max-width: 60%;
-  font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+  font-family: var(--font-venue, "Noto Serif TC", "Songti TC", "PMingLiU", serif);
   font-weight: 900; font-size: 46px; letter-spacing: 4px; color: #fff;
   text-shadow: 0 3px 12px rgba(0,0,0,.75), 0 1px 0 rgba(0,0,0,.6);
   pointer-events: none;
 }
 .champ-venue:empty { display: none; }
 
-/* 冠軍榜的排名編號 + 每列版型（number 左 · 名稱上 · 三零件下）*/
-.card .bey-no {
-  grid-area: no;
-  align-items: center; justify-content: center;
-  font-family: "Anton", "Arial Black", sans-serif;
-  font-size: 58px; color: var(--gold); line-height: 1;
-  text-shadow: 0 2px 8px rgba(0,0,0,.55);
-}
-/* 冠軍榜：面板拉高並讓人物退到面板之下，避免蓋住左側排名編號 */
+/* 冠軍榜每列版型（名稱上 · 三零件下）*/
+/* 冠軍榜：面板拉高並讓人物退到面板之下 */
 .card[data-template="champion"] .panel { top: 60px; bottom: 60px; }
 .card[data-template="champion"] .person { z-index: 2; }
 .card[data-template="champion"] .bey-row {
-  grid-template-columns: 78px 1.15fr 1fr .82fr;
+  grid-template-columns: 1.15fr 1fr .82fr;
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
-    "no name    name    name"
-    "no blade   ratchet bit";
-  gap: 2px 8px; padding: 12px 8px 12px 14px;
+    "name    name    name"
+    "blade   ratchet bit";
+  gap: 2px 8px; padding: 12px 10px 12px 20px;
 }
 .card[data-template="champion"] .part-blade   { grid-area: blade; }
 .card[data-template="champion"] .part-ratchet { grid-area: ratchet; }
 .card[data-template="champion"] .part-bit     { grid-area: bit; }
 .card[data-template="champion"] .bey-name {
   grid-area: name; text-align: left; justify-content: flex-start;
-  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  font-family: var(--font-beyname, "Noto Sans TC", "Microsoft JhengHei", sans-serif);
   font-size: 34px; padding-left: 2px;
 }
 .card[data-template="champion"] .bey-name::before { display: none; }
 
-/* 左側控制：冠軍榜專屬欄位只在選到冠軍榜時顯示 */
-body:not([data-template="champion"]) .champ-only { display: none; }
+/* 左側控制：版型專屬欄位，依目前版型顯示。
+   .tpl-b = 僅 B版（日期/冠軍頭銜）；.tpl-bc = B版+C版共用（標題大小色/會場）。 */
+.tpl-b, .tpl-bc { display: none; }
+body[data-template="champion"] .tpl-b,
+body[data-template="champion"] .tpl-bc,
+body[data-template="c"] .tpl-bc { display: block; }
+
+/* ===== C版（data-template="c"）：HANIK TRACK 風 =====
+   沿用 A版 的 title / rank / panel / bey-row 結構，只重新定位與配色。 */
+/* 顯示會場（C版底部右下）；經典版的置中分隔線在 C版隱藏 */
+.card[data-template="c"] .champ-venue { display: block; }
+.card[data-template="c"] .title-divider { display: none; }
+
+/* 左上角比賽標題（紅字，靠左）*/
+.card[data-template="c"] .title {
+  top: 30px; left: 46px; right: auto; align-items: flex-start;
+}
+.card[data-template="c"] .title-text {
+  font-size: calc(46px * var(--title-scale, 1));
+  color: var(--title-color, #E10600);
+  letter-spacing: 1px; -webkit-text-stroke: 0;
+  text-shadow: 0 2px 8px rgba(0,0,0,.65);
+}
+
+/* 左下巨大名次（白描邊，兩行；沿用名次顏色，建議選紅色）*/
+.card[data-template="c"] .rank { left: 40px; bottom: 42px; max-width: 62%; }
+.card[data-template="c"] .rank-place {
+  font-family: var(--font-rank, "Anton", "Arial Black", sans-serif);
+  font-size: 150px; font-weight: 900; font-style: normal;
+  text-transform: uppercase; line-height: .82; letter-spacing: 2px;
+  color: var(--rank-color, #E10600);
+  -webkit-text-stroke: 4px #fff; paint-order: stroke fill;
+  text-shadow: 0 6px 18px rgba(0,0,0,.6);
+}
+.card[data-template="c"] .rank-name { display: none; }   /* C版不顯示得獎人名稱 */
+
+/* 右側面板：沿用 A版 3 列（零件上、名稱下），名稱置中並加 ◇ 菱形括號 */
+.card[data-template="c"] .bey-name {
+  justify-content: center; text-align: center;
+  color: #fff; font-size: 32px; gap: 12px; padding-right: 0;
+}
+.card[data-template="c"] .bey-name::before,
+.card[data-template="c"] .bey-name::after {
+  content: "◇"; border: none; width: auto; height: auto; border-radius: 0;
+  color: #E10600; font-size: 20px; font-weight: 700;
+}
+.card[data-template="c"] .bey-name:empty::before,
+.card[data-template="c"] .bey-name:empty::after { display: none; }
+
+/* 右下會場名稱（紅字）*/
+.card[data-template="c"] .champ-venue {
+  left: auto; right: 46px; bottom: 30px; text-align: right; max-width: 54%;
+  color: #E10600; font-weight: 900; font-size: 44px;
+}
 
 /* ===== 頁尾（學術研究聲明 + 更新紀錄入口） ===== */
 .site-footer {

@@ -17,6 +17,28 @@ const PART_DEFS = [
 
 const BEY_COUNT = 3;
 
+// ===== 字型（每段文字可各自選字型）=====
+// id "" = 預設（沿用該文字原本的字型堆疊）；其餘為可選字型家族。
+const FONTS = [
+  { id: "",      label: "預設（依版型）",      stack: "" },
+  { id: "sans",  label: "黑體 Noto Sans TC",   stack: "'Noto Sans TC','Microsoft JhengHei',sans-serif" },
+  { id: "serif", label: "明體 Noto Serif TC",  stack: "'Noto Serif TC','Songti TC','PMingLiU',serif" },
+  { id: "kai",   label: "楷體 LXGW WenKai TC", stack: "'LXGW WenKai TC','DFKai-SB','標楷體',cursive" },
+  { id: "anton", label: "英數粗體 Anton",       stack: "'Anton','Noto Sans TC','Arial Black',sans-serif" },
+];
+// 每個文字欄位 → 對應 CSS 變數（見 styles.css 各文字元素的 font-family: var(...)）
+const FONT_FIELDS = [
+  { key: "fontTitle",   cssVar: "--font-title" },   // 比賽名稱 / 冠軍榜標題
+  { key: "fontRank",    cssVar: "--font-rank" },     // 名次文字
+  { key: "fontNick",    cssVar: "--font-nick" },     // 得獎人名稱
+  { key: "fontDate",    cssVar: "--font-date" },     // 冠軍榜日期
+  { key: "fontBadge",   cssVar: "--font-badge" },    // 冠軍頭銜
+  { key: "fontVenue",   cssVar: "--font-venue" },    // 會場名稱
+  { key: "fontBeyName", cssVar: "--font-beyname" },  // 陀螺名稱
+];
+function fontStack(id) { const f = FONTS.find((x) => x.id === id); return f ? f.stack : ""; }
+function fontDefaults() { const o = {}; FONT_FIELDS.forEach((f) => (o[f.key] = "")); return o; }
+
 // ===== 人物去背 AI Prompt（供「複製 AI 去背 Prompt」按鈕使用）=====
 const AI_PERSON_PROMPT =
 `請幫我將這張人物照片「只做去背」，處理成可放進「戰鬥陀螺排名卡片」的人物素材：
@@ -64,6 +86,8 @@ const state = {
   date: "", venue: "", badge: "冠軍",         // 冠軍榜專屬文字
   titleColor: "#E7C56B", titleSize: 1,        // 比賽標題（冠軍榜）大小/顏色
   dateColor: "#FFFFFF", dateSize: 1,          // 日期（冠軍榜）大小/顏色
+  fontTitle: "", fontRank: "", fontNick: "", fontDate: "",   // 各段文字字型（"" = 預設）
+  fontBadge: "", fontVenue: "", fontBeyName: "",
   personX: 0, personY: 0, personScale: 1,   // 人像在卡片座標的位移+縮放，由拖曳/縮放調整
   personOpacity: 1, panelBgOpacity: 0.35,   // 人像 / 面板背景圖透明度（滑桿調整）
   beys: Array.from({ length: BEY_COUNT }, () => ({
@@ -111,7 +135,6 @@ function buildBeyControls() {
     const row = document.createElement("div");
     row.className = "bey-row";
     row.innerHTML = `
-      <div class="bey-no" id="no-${i}" aria-hidden="true">${String(i + 1).padStart(2, "0")}</div>
       ${PART_DEFS.map(
         (p) => `<div class="part part-${p.key}" id="part-${i}-${p.key}" data-bey="${i}" data-part="${p.key}" title="點擊選擇${p.label}">
           <img id="img-${i}-${p.key}" alt="" />
@@ -595,9 +618,10 @@ function applyNickColor() {
 
 // ===== 版型（classic / champion）=====
 // 切換 card 與 body 的 data-template：CSS 以此顯示/隱藏兩套版型元素，
-// 並讓左側「冠軍榜專屬」控制項（.champ-only）只在 champion 顯示。
+// 並讓左側各版型專屬控制項（.tpl-b / .tpl-bc）依目前版型顯示。
+const TEMPLATES = ["classic", "champion", "c"];
 function applyTemplate() {
-  const t = state.template === "champion" ? "champion" : "classic";
+  const t = TEMPLATES.includes(state.template) ? state.template : "classic";
   card.dataset.template = t;
   document.body.dataset.template = t;
 }
@@ -614,6 +638,20 @@ function applyChampText() {
   card.style.setProperty("--date-color", state.dateColor || "#FFFFFF");
   const tsv = $("titleSizeVal"); if (tsv) tsv.textContent = Math.round((state.titleSize || 1) * 100) + "%";
   const dsv = $("dateSizeVal"); if (dsv) dsv.textContent = Math.round((state.dateSize || 1) * 100) + "%";
+}
+
+// 把 FONTS 選項灌進所有 select[data-font]（初始化時呼叫一次）
+function populateFontSelects() {
+  const opts = FONTS.map((f) => `<option value="${f.id}">${f.label}</option>`).join("");
+  document.querySelectorAll("select[data-font]").forEach((sel) => { sel.innerHTML = opts; });
+}
+// 依 state 把每段文字的字型套成 CSS 變數（"" → 移除變數，讓元素用自己的預設堆疊）
+function applyFonts() {
+  FONT_FIELDS.forEach((f) => {
+    const stack = fontStack(state[f.key] || "");
+    if (stack) card.style.setProperty(f.cssVar, stack);
+    else card.style.removeProperty(f.cssVar);
+  });
 }
 // 同步預設色票的選取高亮（color input 回傳小寫 hex，比對時統一小寫）
 function markSwatch(containerId, color) {
@@ -809,6 +847,7 @@ function blankCard(rank) {
     template: "classic",
     date: "", venue: "", badge: "冠軍",
     titleColor: "#E7C56B", titleSize: 1, dateColor: "#FFFFFF", dateSize: 1,
+    ...fontDefaults(),
     logo: "經典賽", nick: "",
     person: "", personX: 0, personY: 0, personScale: 1, personOpacity: 1,
     bg: "", panelBgOpacity: 0.35, cardBg: "",
@@ -839,6 +878,7 @@ function readCardFromDOM() {
     titleSize: state.titleSize || 1,
     dateColor: $("dateColor").value,
     dateSize: state.dateSize || 1,
+    ...FONT_FIELDS.reduce((o, f) => { o[f.key] = $(f.key) ? $(f.key).value : (state[f.key] || ""); return o; }, {}),
     logo: $("logoInput").value,
     nick: $("nickInput").value,
     person: ($("personImg").style.display !== "none" && $("personImg").getAttribute("src")) || "",
@@ -882,7 +922,7 @@ function loadCardToDOM(c) {
   $("sizeSelect").value = c.size || "square"; state.size = c.size || "square";
   state.shape = "full";
   // 版型 + 冠軍榜專屬欄位
-  state.template = c.template === "champion" ? "champion" : "classic";
+  state.template = TEMPLATES.includes(c.template) ? c.template : "classic";
   $("templateSelect").value = state.template;
   state.date = c.date || ""; $("dateInput").value = state.date;
   state.venue = c.venue || ""; $("venueInput").value = state.venue;
@@ -891,6 +931,7 @@ function loadCardToDOM(c) {
   state.titleSize = c.titleSize || 1; $("titleSize").value = state.titleSize;
   state.dateColor = c.dateColor || "#FFFFFF"; $("dateColor").value = state.dateColor; markSwatch("dateSwatches", state.dateColor);
   state.dateSize = c.dateSize || 1; $("dateSize").value = state.dateSize;
+  FONT_FIELDS.forEach((f) => { state[f.key] = c[f.key] || ""; const el = $(f.key); if (el) el.value = state[f.key]; });
   $("logoInput").value = c.logo ?? ""; $("logoText").textContent = c.logo ?? "";
   $("nickInput").value = c.nick || ""; $("rankNick").textContent = c.nick || "";
   setPersonImage(c.person || "");
@@ -914,7 +955,7 @@ function loadCardToDOM(c) {
     renderBeyName(i);
     layoutRow(i);                // 合體型留空時收合分欄，避免中間空洞
   });
-  applyRank(); applyNickColor(); applySize(); applyShape(); applyTemplate(); applyChampText();
+  applyRank(); applyNickColor(); applySize(); applyShape(); applyTemplate(); applyChampText(); applyFonts();
 }
 
 // 把一張卡的部件補齊 v3 欄位（舊資料相容）
@@ -934,6 +975,7 @@ function normalizeCard(c) {
   if (c.titleSize == null) c.titleSize = 1;
   if (c.dateColor == null) c.dateColor = "#FFFFFF";
   if (c.dateSize == null) c.dateSize = 1;
+  FONT_FIELDS.forEach((f) => { if (c[f.key] == null) c[f.key] = ""; });   // 舊卡無字型欄位 → 預設
   if (c.personX == null) c.personX = 0;   // 舊卡無位移/縮放/透明度欄位 → 補預設
   if (c.personY == null) c.personY = 0;
   if (c.personScale == null) c.personScale = 1;
@@ -1126,7 +1168,7 @@ function bindEvents() {
 
   // 版型切換（classic / champion）
   $("templateSelect").addEventListener("change", (e) => {
-    state.template = e.target.value === "champion" ? "champion" : "classic";
+    state.template = TEMPLATES.includes(e.target.value) ? e.target.value : "classic";
     applyTemplate();
     applyChampText();
     fitStage();
@@ -1166,6 +1208,13 @@ function bindEvents() {
     state.dateColor = e.target.value;
     card.style.setProperty("--date-color", e.target.value);
     markSwatch("dateSwatches", e.target.value);
+  });
+  // 各段文字字型：任一 select[data-font] 變更 → 即時套用（saveState 由 #controls change 委派）
+  $("controls").addEventListener("change", (e) => {
+    const sel = e.target.closest("select[data-font]");
+    if (!sel) return;
+    state[sel.dataset.font] = sel.value;
+    applyFonts();
   });
 
   $("personFile").addEventListener("change", (e) => {
@@ -1348,6 +1397,7 @@ async function downloadCard() {
 // ===== 初始化 =====
 function init() {
   buildBeyControls();
+  populateFontSelects();
   createGalleryModal();
   bindEvents();
   enableDrops();
