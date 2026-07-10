@@ -7,6 +7,10 @@
   <link rel="icon" type="image/png" href="assets/brand/favicon.png" />
   <!-- Bootstrap 先載，styles.css 後載以套用我們的主題覆蓋 -->
   <link rel="stylesheet" href="vendor/bootstrap.min.css" />
+  <!-- 冠軍榜版型顯示字型（Google Fonts；離線或載入失敗時 CSS 會自動退回系統字型堆疊） -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Serif+TC:wght@700;900&display=swap" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -15,6 +19,55 @@
     <section class="controls" id="controls">
       <button type="button" class="btn btn-sm btn-outline-secondary drawer-close" id="btnDrawerClose">完成 ✕</button>
       <button class="btn btn-warning btn-download" id="btnDownload">輸出 PNG</button>
+
+      <details class="group" open>
+        <summary>版型</summary>
+        <label>選擇版型
+          <select id="templateSelect" class="form-select">
+            <option value="classic">經典（單人得獎）</option>
+            <option value="champion">冠軍榜（G3 比賽風）</option>
+          </select>
+        </label>
+        <div id="champFields" class="champ-only">
+          <label>比賽日期
+            <input type="text" id="dateInput" class="form-control" placeholder="例：2026/07/05" />
+          </label>
+          <label class="range-field">
+            <span class="range-head">日期大小 <span class="range-val" id="dateSizeVal">100%</span></span>
+            <input type="range" id="dateSize" class="form-range" min="0.5" max="2" step="0.05" value="1" />
+          </label>
+          <div class="color-field">
+            <span class="color-label">日期顏色</span>
+            <div class="swatches" id="dateSwatches">
+              <button type="button" class="swatch" data-color="#FFFFFF" style="--sw:#FFFFFF" title="白" aria-label="白"></button>
+              <button type="button" class="swatch" data-color="#E7C56B" style="--sw:#E7C56B" title="金" aria-label="金"></button>
+              <button type="button" class="swatch" data-color="#37D06A" style="--sw:#37D06A" title="綠" aria-label="綠"></button>
+              <button type="button" class="swatch" data-color="#E10600" style="--sw:#E10600" title="紅" aria-label="紅"></button>
+              <input type="color" id="dateColor" class="color-pick" value="#FFFFFF" title="自訂調色盤" aria-label="日期自訂顏色" />
+            </div>
+          </div>
+          <label class="range-field">
+            <span class="range-head">比賽標題大小 <span class="range-val" id="titleSizeVal">100%</span></span>
+            <input type="range" id="titleSize" class="form-range" min="0.5" max="2" step="0.05" value="1" />
+          </label>
+          <div class="color-field">
+            <span class="color-label">比賽標題顏色</span>
+            <div class="swatches" id="titleSwatches">
+              <button type="button" class="swatch" data-color="#E7C56B" style="--sw:#E7C56B" title="金" aria-label="金"></button>
+              <button type="button" class="swatch" data-color="#FFFFFF" style="--sw:#FFFFFF" title="白" aria-label="白"></button>
+              <button type="button" class="swatch" data-color="#37D06A" style="--sw:#37D06A" title="綠" aria-label="綠"></button>
+              <button type="button" class="swatch" data-color="#E10600" style="--sw:#E10600" title="紅" aria-label="紅"></button>
+              <input type="color" id="titleColor" class="color-pick" value="#E7C56B" title="自訂調色盤" aria-label="標題自訂顏色" />
+            </div>
+          </div>
+          <label>冠軍頭銜文字
+            <input type="text" id="badgeInput" class="form-control" value="冠軍" placeholder="例：冠軍 / 亞軍 / MVP" />
+          </label>
+          <label>會場名稱
+            <input type="text" id="venueInput" class="form-control" placeholder="例：高雄 NS 電玩" />
+          </label>
+        </div>
+      </details>
 
       <details class="group">
         <summary>名次與文字</summary>
@@ -106,6 +159,15 @@
             </div>
           </div>
 
+          <!-- 冠軍榜版型：左上角標題 / 日期 / 冠軍頭銜徽章（僅 champion 版型顯示） -->
+          <div class="champ-topleft" aria-hidden="true">
+            <div class="champ-title" id="champTitle"></div>
+            <div class="champ-date" id="champDate"></div>
+            <div class="champ-badge"><span id="champBadgeText">冠軍</span></div>
+          </div>
+          <!-- 冠軍榜版型：底部會場名稱 -->
+          <div class="champ-venue" id="champVenue" aria-hidden="true"></div>
+
           <div class="person" id="personWrap">
             <img id="personImg" alt="" />
           </div>
@@ -150,6 +212,14 @@
         </div>
         <div class="modal-body changelog-body">
           <ul class="changelog-list">
+          <li class="changelog-item">
+            <span class="changelog-date">2026 / 07 / 11</span>
+            <ul class="changelog-points">
+              <li>新增「冠軍榜」版型（G3 比賽風）：左上比賽標題＋日期、冠軍頭銜徽章、右側 01/02/03 排名榜與底部會場名稱。</li>
+              <li>比賽標題與日期可自訂大小與顏色；冠軍頭銜文字可改（冠軍／亞軍／MVP…）。</li>
+              <li>新增顯示字型；經典版型與原有功能完全保留，可隨時切換。</li>
+            </ul>
+          </li>
           <li class="changelog-item">
             <span class="changelog-date">2026 / 07 / 10</span>
             <ul class="changelog-points">

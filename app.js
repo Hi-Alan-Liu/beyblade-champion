@@ -59,6 +59,11 @@ const state = {
   nickColor: "#E7C56B",
   size: "square",
   shape: "full",
+  // 版型：classic（原經典單人得獎）| champion（冠軍榜 G3 比賽風）
+  template: "classic",
+  date: "", venue: "", badge: "冠軍",         // 冠軍榜專屬文字
+  titleColor: "#E7C56B", titleSize: 1,        // 比賽標題（冠軍榜）大小/顏色
+  dateColor: "#FFFFFF", dateSize: 1,          // 日期（冠軍榜）大小/顏色
   personX: 0, personY: 0, personScale: 1,   // 人像在卡片座標的位移+縮放，由拖曳/縮放調整
   personOpacity: 1, panelBgOpacity: 0.35,   // 人像 / 面板背景圖透明度（滑桿調整）
   beys: Array.from({ length: BEY_COUNT }, () => ({
@@ -106,6 +111,7 @@ function buildBeyControls() {
     const row = document.createElement("div");
     row.className = "bey-row";
     row.innerHTML = `
+      <div class="bey-no" id="no-${i}" aria-hidden="true">${String(i + 1).padStart(2, "0")}</div>
       ${PART_DEFS.map(
         (p) => `<div class="part part-${p.key}" id="part-${i}-${p.key}" data-bey="${i}" data-part="${p.key}" title="點擊選擇${p.label}">
           <img id="img-${i}-${p.key}" alt="" />
@@ -586,6 +592,29 @@ function applyRank() {
 function applyNickColor() {
   card.style.setProperty("--nick-color", state.nickColor);
 }
+
+// ===== 版型（classic / champion）=====
+// 切換 card 與 body 的 data-template：CSS 以此顯示/隱藏兩套版型元素，
+// 並讓左側「冠軍榜專屬」控制項（.champ-only）只在 champion 顯示。
+function applyTemplate() {
+  const t = state.template === "champion" ? "champion" : "classic";
+  card.dataset.template = t;
+  document.body.dataset.template = t;
+}
+// 冠軍榜文字/大小/顏色（標題沿用「比賽名稱」logo，額外套用大小與顏色）
+function applyChampText() {
+  const logo = $("logoInput") ? $("logoInput").value : "";
+  const ct = $("champTitle"); if (ct) ct.textContent = logo;
+  const cd = $("champDate"); if (cd) cd.textContent = state.date || "";
+  const cv = $("champVenue"); if (cv) cv.textContent = state.venue || "";
+  const cb = $("champBadgeText"); if (cb) cb.textContent = state.badge || "";
+  card.style.setProperty("--title-scale", state.titleSize || 1);
+  card.style.setProperty("--title-color", state.titleColor || "#E7C56B");
+  card.style.setProperty("--date-scale", state.dateSize || 1);
+  card.style.setProperty("--date-color", state.dateColor || "#FFFFFF");
+  const tsv = $("titleSizeVal"); if (tsv) tsv.textContent = Math.round((state.titleSize || 1) * 100) + "%";
+  const dsv = $("dateSizeVal"); if (dsv) dsv.textContent = Math.round((state.dateSize || 1) * 100) + "%";
+}
 // 同步預設色票的選取高亮（color input 回傳小寫 hex，比對時統一小寫）
 function markSwatch(containerId, color) {
   const c = (color || "").toLowerCase();
@@ -720,7 +749,8 @@ function layoutRow(i) {
     if (first) first.classList.add("cl-first");
     if (last) last.classList.add("cl-last");
   }
-  row.style.gridTemplateColumns = collapse ? `repeat(${visible.length}, 1fr)` : "";
+  // 冠軍榜版型用 grid-template-areas 排版，不套用經典版的收合欄寬（避免破版）
+  row.style.gridTemplateColumns = (state.template === "champion") ? "" : (collapse ? `repeat(${visible.length}, 1fr)` : "");
 }
 
 function imgSrc(i, part) {
@@ -776,6 +806,9 @@ function blankCard(rank) {
   return {
     title: "", rank, size: "square", shape: "full",
     rankText: r.place, rankColor: r.color, nickColor: "#E7C56B",
+    template: "classic",
+    date: "", venue: "", badge: "冠軍",
+    titleColor: "#E7C56B", titleSize: 1, dateColor: "#FFFFFF", dateSize: 1,
     logo: "經典賽", nick: "",
     person: "", personX: 0, personY: 0, personScale: 1, personOpacity: 1,
     bg: "", panelBgOpacity: 0.35, cardBg: "",
@@ -798,6 +831,14 @@ function readCardFromDOM() {
     nickColor: $("nickColor").value,
     size: $("sizeSelect").value,
     shape: "full",
+    template: $("templateSelect").value,
+    date: $("dateInput").value,
+    venue: $("venueInput").value,
+    badge: $("badgeInput").value,
+    titleColor: $("titleColor").value,
+    titleSize: state.titleSize || 1,
+    dateColor: $("dateColor").value,
+    dateSize: state.dateSize || 1,
     logo: $("logoInput").value,
     nick: $("nickInput").value,
     person: ($("personImg").style.display !== "none" && $("personImg").getAttribute("src")) || "",
@@ -840,6 +881,16 @@ function loadCardToDOM(c) {
   $("nickColor").value = nickColor; state.nickColor = nickColor; markSwatch("nickSwatches", nickColor);
   $("sizeSelect").value = c.size || "square"; state.size = c.size || "square";
   state.shape = "full";
+  // 版型 + 冠軍榜專屬欄位
+  state.template = c.template === "champion" ? "champion" : "classic";
+  $("templateSelect").value = state.template;
+  state.date = c.date || ""; $("dateInput").value = state.date;
+  state.venue = c.venue || ""; $("venueInput").value = state.venue;
+  state.badge = c.badge == null ? "冠軍" : c.badge; $("badgeInput").value = state.badge;
+  state.titleColor = c.titleColor || "#E7C56B"; $("titleColor").value = state.titleColor; markSwatch("titleSwatches", state.titleColor);
+  state.titleSize = c.titleSize || 1; $("titleSize").value = state.titleSize;
+  state.dateColor = c.dateColor || "#FFFFFF"; $("dateColor").value = state.dateColor; markSwatch("dateSwatches", state.dateColor);
+  state.dateSize = c.dateSize || 1; $("dateSize").value = state.dateSize;
   $("logoInput").value = c.logo ?? ""; $("logoText").textContent = c.logo ?? "";
   $("nickInput").value = c.nick || ""; $("rankNick").textContent = c.nick || "";
   setPersonImage(c.person || "");
@@ -863,7 +914,7 @@ function loadCardToDOM(c) {
     renderBeyName(i);
     layoutRow(i);                // 合體型留空時收合分欄，避免中間空洞
   });
-  applyRank(); applyNickColor(); applySize(); applyShape();
+  applyRank(); applyNickColor(); applySize(); applyShape(); applyTemplate(); applyChampText();
 }
 
 // 把一張卡的部件補齊 v3 欄位（舊資料相容）
@@ -874,6 +925,15 @@ function normalizeCard(c) {
   if (c.rankText == null) c.rankText = rDef.place;
   if (c.rankColor == null) c.rankColor = rDef.color;
   if (c.nickColor == null) c.nickColor = "#E7C56B";
+  // 版型欄位（舊卡沒有 → 補為經典版型，維持原樣不變）
+  if (c.template == null) c.template = "classic";
+  if (c.date == null) c.date = "";
+  if (c.venue == null) c.venue = "";
+  if (c.badge == null) c.badge = "冠軍";
+  if (c.titleColor == null) c.titleColor = "#E7C56B";
+  if (c.titleSize == null) c.titleSize = 1;
+  if (c.dateColor == null) c.dateColor = "#FFFFFF";
+  if (c.dateSize == null) c.dateSize = 1;
   if (c.personX == null) c.personX = 0;   // 舊卡無位移/縮放/透明度欄位 → 補預設
   if (c.personY == null) c.personY = 0;
   if (c.personScale == null) c.personScale = 1;
@@ -1048,6 +1108,8 @@ function bindEvents() {
   };
   bindSwatches("rankSwatches", "rankColor", (c) => { state.rankColor = c; card.style.setProperty("--rank-color", c); });
   bindSwatches("nickSwatches", "nickColor", (c) => { state.nickColor = c; card.style.setProperty("--nick-color", c); });
+  bindSwatches("titleSwatches", "titleColor", (c) => { state.titleColor = c; card.style.setProperty("--title-color", c); });
+  bindSwatches("dateSwatches", "dateColor", (c) => { state.dateColor = c; card.style.setProperty("--date-color", c); });
 
   $("sizeSelect").addEventListener("change", (e) => {
     state.size = e.target.value;
@@ -1056,9 +1118,54 @@ function bindEvents() {
 
   $("logoInput").addEventListener("input", (e) => {
     $("logoText").textContent = e.target.value;
+    const ct = $("champTitle"); if (ct) ct.textContent = e.target.value;   // 冠軍榜標題沿用比賽名稱
   });
   $("nickInput").addEventListener("input", (e) => {
     $("rankNick").textContent = e.target.value;
+  });
+
+  // 版型切換（classic / champion）
+  $("templateSelect").addEventListener("change", (e) => {
+    state.template = e.target.value === "champion" ? "champion" : "classic";
+    applyTemplate();
+    applyChampText();
+    fitStage();
+    saveState();
+  });
+  // 冠軍榜：日期 / 會場 / 冠軍頭銜文字
+  $("dateInput").addEventListener("input", (e) => {
+    state.date = e.target.value;
+    const cd = $("champDate"); if (cd) cd.textContent = e.target.value;
+  });
+  $("venueInput").addEventListener("input", (e) => {
+    state.venue = e.target.value;
+    const cv = $("champVenue"); if (cv) cv.textContent = e.target.value;
+  });
+  $("badgeInput").addEventListener("input", (e) => {
+    state.badge = e.target.value;
+    const cb = $("champBadgeText"); if (cb) cb.textContent = e.target.value;
+  });
+  // 冠軍榜：比賽標題 / 日期 大小
+  $("titleSize").addEventListener("input", (e) => {
+    state.titleSize = parseFloat(e.target.value) || 1;
+    card.style.setProperty("--title-scale", state.titleSize);
+    $("titleSizeVal").textContent = Math.round(state.titleSize * 100) + "%";
+  });
+  $("dateSize").addEventListener("input", (e) => {
+    state.dateSize = parseFloat(e.target.value) || 1;
+    card.style.setProperty("--date-scale", state.dateSize);
+    $("dateSizeVal").textContent = Math.round(state.dateSize * 100) + "%";
+  });
+  // 冠軍榜：比賽標題 / 日期 顏色（調色盤即時預覽）
+  $("titleColor").addEventListener("input", (e) => {
+    state.titleColor = e.target.value;
+    card.style.setProperty("--title-color", e.target.value);
+    markSwatch("titleSwatches", e.target.value);
+  });
+  $("dateColor").addEventListener("input", (e) => {
+    state.dateColor = e.target.value;
+    card.style.setProperty("--date-color", e.target.value);
+    markSwatch("dateSwatches", e.target.value);
   });
 
   $("personFile").addEventListener("change", (e) => {
