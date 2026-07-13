@@ -49,5 +49,5 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`卡片產生器：http://localhost:${PORT}`);
-  console.log("（匯出 PNG 請透過此網址開啟；Ctrl+C 結束）");
+  console.log("（匯出圖片請透過此網址開啟；Ctrl+C 結束）");
 });

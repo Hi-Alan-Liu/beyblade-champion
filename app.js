@@ -619,11 +619,12 @@ function applyNickColor() {
 // ===== 版型（classic / champion）=====
 // 切換 card 與 body 的 data-template：CSS 以此顯示/隱藏兩套版型元素，
 // 並讓左側各版型專屬控制項（.tpl-b / .tpl-bc）依目前版型顯示。
-const TEMPLATES = ["classic", "champion", "c"];
+const TEMPLATES = ["classic", "champion"];
 function applyTemplate() {
   const t = TEMPLATES.includes(state.template) ? state.template : "classic";
   card.dataset.template = t;
   document.body.dataset.template = t;
+  updateLayerToolbar();   // 圖層工具列只在 B/C 版顯示
 }
 // 冠軍榜文字/大小/顏色（標題沿用「比賽名稱」logo，額外套用大小與顏色）
 function applyChampText() {
@@ -851,6 +852,11 @@ function blankCard(rank) {
     logo: "經典賽", nick: "",
     person: "", personX: 0, personY: 0, personScale: 1, personOpacity: 1,
     bg: "", panelBgOpacity: 0.35, cardBg: "",
+    // 自由圖層「依版型各自記錄」：A版預設帶入預設排版，B版預設空白（可按「套用預設排版」）
+    layersByTemplate: {
+      classic: classicPreset(1080).map((s, i) => ({ ...s, z: i + 1 })),
+      champion: [],
+    },
     beys: [0, 1, 2].map(() => ({
       blade: blankPart(), ratchet: blankPart(), bit: blankPart(),
     })),
@@ -887,6 +893,15 @@ function readCardFromDOM() {
     bg: $("panelBg").style.backgroundImage || "",
     panelBgOpacity: state.panelBgOpacity == null ? 0.35 : state.panelBgOpacity,
     cardBg: $("cardBg").style.backgroundImage || "",
+    // 自由圖層依版型各自記錄；沿用「同一個」陣列參考（不可在此 clone/normalize，否則會替換掉
+    // 正在被編輯的圖層物件而丟失變更），並把作用中版型的圖層同步回 layersByTemplate。
+    layers: prev.layers || [],
+    layersByTemplate: (function () {
+      const t = $("templateSelect").value;
+      const m = Object.assign({}, prev.layersByTemplate || {});
+      m[t] = prev.layers || [];
+      return m;
+    })(),
     beys: [0, 1, 2].map((i) => {
       const o = {};
       const prevBey = (prev.beys && prev.beys[i]) || {};
@@ -955,6 +970,18 @@ function loadCardToDOM(c) {
     renderBeyName(i);
     layoutRow(i);                // 合體型留空時收合分欄，避免中間空洞
   });
+  // 自由圖層（依版型各自記錄）：正規化每個版型槽，取目前版型的圖層為作用中陣列
+  {
+    const src = (c.layersByTemplate && typeof c.layersByTemplate === "object") ? c.layersByTemplate : {};
+    if (!c.layersByTemplate && Array.isArray(c.layers)) src[state.template] = c.layers;   // 舊單層遷移
+    const lbt = {};
+    TEMPLATES.forEach((t) => { lbt[t] = (Array.isArray(src[t]) ? src[t] : []).map(normalizeLayer); });
+    c.layersByTemplate = lbt;
+    c.layers = lbt[state.template] || [];
+    if (cards[active]) { cards[active].layersByTemplate = lbt; cards[active].layers = c.layers; }
+  }
+  selLayerId = null;
+  renderLayers();
   applyRank(); applyNickColor(); applySize(); applyShape(); applyTemplate(); applyChampText(); applyFonts();
 }
 
@@ -966,8 +993,8 @@ function normalizeCard(c) {
   if (c.rankText == null) c.rankText = rDef.place;
   if (c.rankColor == null) c.rankColor = rDef.color;
   if (c.nickColor == null) c.nickColor = "#E7C56B";
-  // 版型欄位（舊卡沒有 → 補為經典版型，維持原樣不變）
-  if (c.template == null) c.template = "classic";
+  // 版型欄位（舊卡沒有或為已移除的 C版 → 補為經典版型）
+  c.template = TEMPLATES.includes(c.template) ? c.template : "classic";
   if (c.date == null) c.date = "";
   if (c.venue == null) c.venue = "";
   if (c.badge == null) c.badge = "冠軍";
@@ -981,6 +1008,15 @@ function normalizeCard(c) {
   if (c.personScale == null) c.personScale = 1;
   if (c.personOpacity == null) c.personOpacity = 1;
   if (c.panelBgOpacity == null) c.panelBgOpacity = 0.35;
+  // 自由圖層改為「依版型各自記錄」：正規化每個版型槽；舊卡若只有單一 c.layers 則遷移到當前版型
+  {
+    const src = (c.layersByTemplate && typeof c.layersByTemplate === "object") ? c.layersByTemplate : {};
+    if (!c.layersByTemplate && Array.isArray(c.layers)) src[c.template] = c.layers;
+    const lbt = {};
+    TEMPLATES.forEach((t) => { lbt[t] = (Array.isArray(src[t]) ? src[t] : []).map(normalizeLayer); });
+    c.layersByTemplate = lbt;
+    c.layers = lbt[c.template] || [];   // 作用中版型的工作陣列
+  }
   const parts = ["blade", "ratchet", "bit"];
   c.beys = (c.beys || []).map((b) => {
     const o = {};
@@ -1166,13 +1202,9 @@ function bindEvents() {
     $("rankNick").textContent = e.target.value;
   });
 
-  // 版型切換（classic / champion）
+  // 版型切換（classic / champion）：各版型的圖層各自記錄，切換時互換
   $("templateSelect").addEventListener("change", (e) => {
-    state.template = TEMPLATES.includes(e.target.value) ? e.target.value : "classic";
-    applyTemplate();
-    applyChampText();
-    fitStage();
-    saveState();
+    switchTemplate(TEMPLATES.includes(e.target.value) ? e.target.value : "classic");
   });
   // 冠軍榜：日期 / 會場 / 冠軍頭銜文字
   $("dateInput").addEventListener("input", (e) => {
@@ -1283,6 +1315,31 @@ function bindEvents() {
     openGallery(cell.dataset.bey, cell.dataset.part);
   });
 
+  // ===== 自由圖層：新增文字/圖片、屬性列、取消選取、鍵盤刪除 =====
+  $("btnAddText").addEventListener("click", addTextLayer);
+  $("btnAddImage").addEventListener("click", () => $("layerImgFile").click());
+  $("btnApplyPreset").addEventListener("click", applyPreset);
+  $("layerImgFile").addEventListener("change", (e) => {
+    const f = e.target.files[0];
+    if (f) readImage(f, (url) => addImageLayer(url));
+    e.target.value = "";
+  });
+  bindLayerProps();
+  // 點卡片空白處（非圖層/非控制點）→ 取消選取
+  card.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".layer")) return;   // 點到圖層本身 → 不取消
+    deselectLayer();
+  });
+  // 鍵盤 Delete/Backspace 刪除選取圖層（輸入框/編輯中不攔）
+  document.addEventListener("keydown", (e) => {
+    if (selLayerId == null) return;
+    if (e.key !== "Delete" && e.key !== "Backspace") return;
+    const a = document.activeElement;
+    if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.isContentEditable)) return;
+    e.preventDefault();
+    deleteLayer(selLayerId);
+  });
+
   $("btnDownload").addEventListener("click", downloadCard);
 
   // 手機/平板：設定抽屜開關 + 行動工具列輸出
@@ -1335,17 +1392,23 @@ function fitStage() {
   stage.style.height = `${cardH * scale}px`;
 }
 
-// ===== 下載 PNG =====
+// ===== 下載 JPG =====
 async function exportCurrentDataURL() {
   const cardH = (SIZES[state.size] || SIZES.square).h;
-  return window.htmlToImage.toPng(card, {
+  // 先等字型下載完再擷取：避免剛載入就按匯出，抓到還沒替換的備援字型
+  if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (e) {} }
+  // 卡片是滿版不透明漸層 → 用高品質 JPEG，檔案約為 PNG 的 1/20（5MB→~270KB），畫質肉眼無差
+  return window.htmlToImage.toJpeg(card, {
     pixelRatio: 2,               // 2x 高解析度
+    quality: 0.92,               // 高品質（漸層背景無明顯色帶）
     width: 1080, height: cardH,
     cacheBust: true,
-    backgroundColor: getComputedStyle(card).backgroundColor,
+    backgroundColor: "#0e1422",  // JPEG 無透明通道；給卡片底色當 fallback（實際被滿版漸層蓋住）
     // 匯出時略過：①無來源的空 img（src 會解析成頁面網址→載入失敗→reject）②編輯用的虛線提示框 .ph
     filter: (node) => {
       if (node.nodeType === 1 && node.classList && node.classList.contains("ph")) return false;
+      // 圖層選取外框/控制點（.layer-ui）為編輯輔助，不進匯出
+      if (node.nodeType === 1 && node.classList && node.classList.contains("layer-ui")) return false;
       if (node.tagName === "IMG") {
         const s = node.getAttribute("src");
         return !!s && s.length > 0;
@@ -1354,15 +1417,73 @@ async function exportCurrentDataURL() {
     },
   });
 }
-function triggerDownload(dataUrl, filename) {
+// LINE / FB / IG 等 App 內建瀏覽器（WebView）：對 <a download> + data: URL 支援極差，
+// 直接下載幾乎無效。用 UA 粗略判斷，改走「系統分享」或「長按存圖」路徑。
+function isInAppBrowser() {
+  const ua = navigator.userAgent || "";
+  return /\bLine\/|FBAN|FBAV|FB_IAB|Instagram|MicroMessenger|Twitter|; ?wv\)/i.test(ua);
+}
+
+function dataUrlToBlob(dataUrl) {
+  const comma = dataUrl.indexOf(",");
+  const head = dataUrl.slice(0, comma);
+  const mime = (head.match(/data:([^;]+)/) || [])[1] || "image/jpeg";
+  const bin = atob(dataUrl.slice(comma + 1));
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+// 顯示大圖覆蓋層，提示使用者長按存到相簿（in-app 瀏覽器最可靠的存檔方式）
+function showLongPressSave(dataUrl) {
+  const old = document.getElementById("saveOverlay");
+  if (old) old.remove();
+  const ov = document.createElement("div");
+  ov.id = "saveOverlay";
+  ov.className = "save-overlay";
+  ov.innerHTML =
+    '<div class="save-sheet">' +
+    '<p class="save-tip">👇 長按下方圖片 →「儲存到相簿 / 加入照片」</p>' +
+    '<img class="save-img" alt="卡片" />' +
+    '<p class="save-hint">若仍無法，請點右上角選單，用 Safari / Chrome 開啟本頁再下載。</p>' +
+    '<button type="button" class="btn btn-warning save-close">關閉</button>' +
+    "</div>";
+  ov.querySelector(".save-img").src = dataUrl;
+  const close = () => ov.remove();
+  ov.querySelector(".save-close").addEventListener("click", close);
+  ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
+  document.body.appendChild(ov);
+}
+
+async function triggerDownload(dataUrl, filename) {
+  const blob = dataUrlToBlob(dataUrl);
+  // 1) 優先用系統分享：in-app 瀏覽器多半可叫出「儲存圖片 / 分享」原生面板
+  try {
+    const file = new File([blob], filename, { type: blob.type });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file] });
+      return;
+    }
+  } catch (e) {
+    // AbortError＝使用者自己取消分享，不用再 fallback；其餘錯誤往下走
+    if (e && e.name === "AbortError") return;
+  }
+
+  // 2) in-app 瀏覽器且不支援分享：顯示圖片讓使用者長按存檔（<a download> 在此無效）
+  if (isInAppBrowser()) { showLongPressSave(dataUrl); return; }
+
+  // 3) 桌機 / 一般行動瀏覽器：正規下載
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.download = filename; a.href = dataUrl; a.click();
+  a.download = filename; a.href = url;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 function cardFilename(c, i) {
   const rawRank = (c.rankText || (RANKS[c.rank] && RANKS[c.rank].line1) || ("card" + (i + 1)));
   const rankName = rawRank.trim().replace(/[^\w一-龥-]/g, "") || ("card" + (i + 1));
   const t = (c.title || "").trim().replace(/[^\w一-龥-]/g, "");
-  return `beyblade-${t || rankName}-${c.size}.png`;
+  return `beyblade-${t || rankName}-${c.size}.jpg`;
 }
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -1370,7 +1491,7 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 function exportNeedsHttp() {
   if (location.protocol === "file:") {
     alert(
-      "匯出 PNG 需要透過本機伺服器開啟（圖庫圖片在 file:// 下無法被擷取）。\n\n" +
+      "匯出圖片需要透過本機伺服器開啟（圖庫圖片在 file:// 下無法被擷取）。\n\n" +
       "請在專案資料夾執行：\n    node serve.js\n\n" +
       "然後改用瀏覽器開啟： http://localhost:8080"
     );
@@ -1383,15 +1504,502 @@ async function downloadCard() {
   if (exportNeedsHttp()) return;
   const btn = $("btnDownload");
   btn.disabled = true; const oldText = btn.textContent; btn.textContent = "產生中…";
+  deselectLayer();   // 匯出前取消圖層選取，避免外框/控制點入圖
   try {
     if (!window.htmlToImage) throw new Error("html-to-image 未載入");
     cards[active] = { ...cards[active], ...readCardFromDOM() };
     const url = await exportCurrentDataURL();
-    triggerDownload(url, cardFilename(cards[active], active));
+    await triggerDownload(url, cardFilename(cards[active], active));
   } catch (err) {
     alert("產生圖片失敗：" + err.message + "\n（請確認 vendor/html-to-image.js 存在或網路可載入）");
     console.error(err);
   } finally { btn.disabled = false; btn.textContent = oldText; }
+}
+
+// ============================================================================
+// ===== 自由圖層（B/C 版：可自訂新增文字/圖片，拖曳／縮放／旋轉，類 IG 限動）=====
+// 圖層資料存在 cards[active].layers（非 DOM），座標以「卡片 1080×H px」為準，
+// 因此預覽(被 stage 縮放)與匯出(原生尺寸)自動一致，與人像拖曳同一套座標邏輯。
+// ============================================================================
+const LAYER_TEMPLATES = ["classic", "champion"];   // 顯示圖層工具列的版型（A/B 版皆可自由加圖層）
+const LAYER_SCALE_MIN = 0.2, LAYER_SCALE_MAX = 6;
+const LAYER_SWATCHES = ["#FFFFFF", "#E7C56B", "#111111", "#E10600", "#37D06A", "#2F8FE6"];
+let layerSeq = 0;
+let selLayerId = null;                        // 目前選取的圖層 id（null = 未選）
+
+function newLayerId() { layerSeq += 1; return "ly_" + Date.now().toString(36) + "_" + layerSeq; }
+function clampLayerScale(s) { return Math.min(LAYER_SCALE_MAX, Math.max(LAYER_SCALE_MIN, s || 1)); }
+// 目前「作用中版型」的圖層槽（layersByTemplate[template]）；c.layers 永遠鏡射作用中槽
+function curLayers() {
+  const c = cards[active];
+  if (!c) return [];
+  if (!c.layersByTemplate || typeof c.layersByTemplate !== "object") c.layersByTemplate = {};
+  const t = c.template || state.template || "classic";
+  if (!Array.isArray(c.layersByTemplate[t])) c.layersByTemplate[t] = Array.isArray(c.layers) ? c.layers : [];
+  c.layers = c.layersByTemplate[t];
+  return c.layers;
+}
+// 取代整個作用中版型的圖層陣列（供套用預設排版；同步 map 與 c.layers 兩處參考）
+function setCurLayers(arr) {
+  const c = cards[active];
+  if (!c) return;
+  if (!c.layersByTemplate || typeof c.layersByTemplate !== "object") c.layersByTemplate = {};
+  const t = c.template || state.template || "classic";
+  c.layersByTemplate[t] = arr;
+  c.layers = arr;
+}
+function findLayer(id) { return curLayers().find((l) => l.id === id); }
+function topZ() { return curLayers().reduce((m, l) => Math.max(m, l.z || 0), 0); }
+
+// 圖層資料形狀正規化（相容舊卡；補齊 text / image 各自欄位）
+function normalizeLayer(l) {
+  l = l || {};
+  const type = l.type === "image" ? "image" : "text";
+  const out = {
+    id: l.id || newLayerId(),
+    type,
+    x: Number.isFinite(l.x) ? l.x : 400,
+    y: Number.isFinite(l.y) ? l.y : 440,
+    scale: l.scale > 0 ? l.scale : 1,
+    rotation: Number.isFinite(l.rotation) ? l.rotation : 0,
+    z: Number.isFinite(l.z) ? l.z : 1,
+  };
+  if (type === "text") {
+    out.text = l.text != null ? String(l.text) : "輸入文字";
+    out.color = l.color || "#FFFFFF";
+    out.fontId = l.fontId || "";
+    out.fontSize = l.fontSize > 0 ? l.fontSize : 64;
+    out.italic = !!l.italic;                                   // 斜體（A版名次風）
+    out.stroke = !!l.stroke;                                   // 文字描邊
+    out.strokeColor = l.strokeColor || "#FFFFFF";
+    out.strokeWidth = l.strokeWidth > 0 ? l.strokeWidth : 4;
+  } else {
+    out.img = l.img || "";
+    out.baseW = l.baseW > 0 ? l.baseW : 320;
+    out.opacity = l.opacity == null ? 1 : l.opacity;
+  }
+  return out;
+}
+
+function layerTransform(l) {
+  return `translate(${l.x}px, ${l.y}px) rotate(${l.rotation || 0}deg) scale(${l.scale || 1})`;
+}
+
+// 若有文字圖層正在就地編輯，先 blur 提交（避免重繪時丟失未存的文字）
+function commitActiveEdit() {
+  const host = $("layerHost");
+  const ed = host && host.querySelector(".layer-text-body.editing");
+  if (ed) ed.blur();
+}
+
+// 重繪整個圖層層（新增/刪除/選取變更時用；純屬性微調走 updateLayerBody 不整重繪）
+function renderLayers() {
+  const host = $("layerHost");
+  if (!host) return;
+  commitActiveEdit();
+  const frag = document.createDocumentFragment();
+  curLayers().slice().sort((a, b) => (a.z || 0) - (b.z || 0)).forEach((l) => frag.appendChild(buildLayerEl(l)));
+  host.innerHTML = "";
+  host.appendChild(frag);   // 單次插入，減少重排
+  updateLayerProps();
+}
+
+function buildLayerEl(l) {
+  const el = document.createElement("div");
+  el.className = "layer layer-" + l.type + (l.id === selLayerId ? " selected" : "");
+  el.dataset.id = l.id;
+  el.style.transform = layerTransform(l);
+  el.style.zIndex = l.z || 1;
+  if (l.type === "text") {
+    const t = document.createElement("div");
+    t.className = "layer-text-body";
+    t.textContent = l.text;
+    styleTextBody(t, l);
+    el.appendChild(t);
+  } else {
+    const im = document.createElement("img");
+    im.className = "layer-img-body";
+    im.src = l.img;
+    im.style.width = (l.baseW || 320) + "px";
+    im.style.opacity = l.opacity == null ? 1 : l.opacity;
+    el.appendChild(im);
+  }
+  // 選取外框＋控制點（旋轉/縮放/刪除）；控制點反向縮放維持固定視覺大小；匯出時整組 .layer-ui 被過濾掉
+  if (l.id === selLayerId) {
+    const inv = 1 / (l.scale || 1);
+    const ui = document.createElement("div");
+    ui.className = "layer-ui";
+    ui.innerHTML =
+      `<span class="layer-frame"></span>` +
+      `<button type="button" class="layer-handle layer-rotate" data-role="rotate" style="transform:scale(${inv})" title="旋轉"></button>` +
+      `<button type="button" class="layer-handle layer-scale" data-role="scale" style="transform:scale(${inv})" title="縮放"></button>` +
+      `<button type="button" class="layer-handle layer-del" data-role="del" style="transform:scale(${inv})" title="刪除">✕</button>`;
+    el.appendChild(ui);
+  }
+  return el;
+}
+
+// 套用文字圖層樣式（顏色/字級/字型/描邊）；build 與微調共用
+function styleTextBody(b, l) {
+  b.style.color = l.color;
+  b.style.fontSize = (l.fontSize || 64) + "px";
+  b.style.fontFamily = fontStack(l.fontId) || "";
+  b.style.fontStyle = l.italic ? "italic" : "";
+  if (l.stroke) {
+    b.style.webkitTextStroke = (l.strokeWidth || 4) + "px " + (l.strokeColor || "#FFFFFF");
+    b.style.paintOrder = "stroke fill";
+  } else {
+    b.style.webkitTextStroke = "";
+    b.style.paintOrder = "";
+  }
+}
+
+// 屬性微調時只改選取圖層的 DOM（避免整重繪打斷互動）
+function updateLayerBody(l) {
+  const el = $("layerHost").querySelector(`.layer[data-id="${l.id}"]`);
+  if (!el) return;
+  if (l.type === "text") {
+    const b = el.querySelector(".layer-text-body");
+    if (b) styleTextBody(b, l);
+  } else {
+    const im = el.querySelector(".layer-img-body");
+    if (im) im.style.opacity = l.opacity == null ? 1 : l.opacity;
+  }
+}
+function updateHandleScale(el, scale) {
+  const inv = 1 / (scale || 1);
+  el.querySelectorAll(".layer-handle").forEach((h) => { h.style.transform = "scale(" + inv + ")"; });
+}
+
+function selectLayer(id) { selLayerId = id; renderLayers(); }
+function deselectLayer() { if (selLayerId == null) return; selLayerId = null; renderLayers(); }
+
+function addTextLayer() {
+  const l = normalizeLayer({ type: "text", x: 360, y: 460, text: "輸入文字", color: "#FFFFFF", z: topZ() + 1 });
+  curLayers().push(l);
+  selLayerId = l.id;
+  renderLayers();
+  saveState();
+  const body = $("layerHost").querySelector(`.layer[data-id="${l.id}"] .layer-text-body`);
+  if (body) startTextEdit(body, l);
+}
+function addImageLayer(url) {
+  const img = new Image();
+  const place = (baseW) => {
+    const l = normalizeLayer({ type: "image", x: 360, y: 360, img: url, baseW, z: topZ() + 1 });
+    curLayers().push(l);
+    selLayerId = l.id;
+    renderLayers();
+    saveState();
+  };
+  img.onload = () => place(Math.min(360, img.width || 360));
+  img.onerror = () => place(320);
+  img.src = url;
+}
+function deleteLayer(id) {
+  const layers = curLayers();
+  const i = layers.findIndex((l) => l.id === id);
+  if (i >= 0) layers.splice(i, 1);
+  if (selLayerId === id) selLayerId = null;
+  renderLayers();
+  saveState();
+}
+// 上/下移一層：先把 z 重排成連號，再與相鄰圖層對調
+function bringLayer(id, dir) {
+  const sorted = curLayers().slice().sort((a, b) => (a.z || 0) - (b.z || 0));
+  sorted.forEach((x, idx) => (x.z = idx + 1));
+  const idx = sorted.findIndex((x) => x.id === id);
+  const swap = dir < 0 ? idx - 1 : idx + 1;
+  if (idx < 0 || swap < 0 || swap >= sorted.length) { renderLayers(); return; }
+  const tmp = sorted[idx].z; sorted[idx].z = sorted[swap].z; sorted[swap].z = tmp;
+  renderLayers();
+  saveState();
+}
+
+// 文字圖層雙擊 → 就地編輯（contenteditable）；Enter 送出、Shift+Enter 換行
+function startTextEdit(bodyEl, l) {
+  bodyEl.setAttribute("contenteditable", "true");
+  bodyEl.classList.add("editing");
+  bodyEl.focus();
+  const range = document.createRange();
+  range.selectNodeContents(bodyEl);
+  const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+  const finish = () => {
+    bodyEl.removeAttribute("contenteditable");
+    bodyEl.classList.remove("editing");
+    l.text = bodyEl.innerText.replace(/\n$/, "");
+    if (!l.text.trim()) l.text = "輸入文字";
+    bodyEl.textContent = l.text;
+    bodyEl.removeEventListener("blur", finish);
+    bodyEl.removeEventListener("keydown", onKey);
+    saveState();
+  };
+  const onKey = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); bodyEl.blur(); }
+    e.stopPropagation();   // 不讓 Delete/Backspace 觸發刪圖層等全域鍵
+  };
+  bodyEl.addEventListener("blur", finish);
+  bodyEl.addEventListener("keydown", onKey);
+}
+
+// ===== 圖層屬性工具列（依選取圖層型別動態產生）=====
+function layerCommonBtns() {
+  return `<div class="lt-btns">
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-role="back" title="下移一層">⬇ 層</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-role="front" title="上移一層">⬆ 層</button>
+    <button type="button" class="btn btn-sm btn-outline-danger" data-role="del">🗑 刪除</button>
+  </div>`;
+}
+function updateLayerProps() {
+  const bar = $("layerProps");
+  if (!bar) return;
+  const l = findLayer(selLayerId);
+  if (!l) { bar.hidden = true; bar.innerHTML = ""; return; }
+  bar.hidden = false;
+  if (l.type === "text") {
+    const fontOpts = FONTS.map((f) => `<option value="${f.id}"${f.id === l.fontId ? " selected" : ""}>${f.label}</option>`).join("");
+    const swatches = LAYER_SWATCHES.map((c) =>
+      `<button type="button" class="swatch${c.toLowerCase() === (l.color || "").toLowerCase() ? " active" : ""}" data-color="${c}" style="--sw:${c}"></button>`).join("");
+    bar.innerHTML =
+      `<div class="lt-row">
+        <div class="swatches lt-swatches">${swatches}<input type="color" class="color-pick" data-role="colorpick" value="${l.color}" title="自訂顏色" /></div>
+        <select class="form-select form-select-sm lt-font" data-role="font">${fontOpts}</select>
+      </div>
+      <div class="lt-row">
+        <label class="lt-size">大小 <input type="range" class="form-range" data-role="fontsize" min="24" max="240" step="2" value="${l.fontSize || 64}" /></label>
+        <label class="lt-check"><input type="checkbox" data-role="italic"${l.italic ? " checked" : ""} /> 斜體</label>
+        <label class="lt-check"><input type="checkbox" data-role="stroke"${l.stroke ? " checked" : ""} /> 描邊</label>
+        ${layerCommonBtns()}
+      </div>`;
+  } else {
+    bar.innerHTML =
+      `<div class="lt-row">
+        <label class="lt-size">透明度 <input type="range" class="form-range" data-role="opacity" min="0.1" max="1" step="0.05" value="${l.opacity == null ? 1 : l.opacity}" /></label>
+        ${layerCommonBtns()}
+      </div>`;
+  }
+}
+function markLayerSwatch(color) {
+  const c = (color || "").toLowerCase();
+  const bar = $("layerProps");
+  bar.querySelectorAll(".swatch").forEach((b) => b.classList.toggle("active", (b.dataset.color || "").toLowerCase() === c));
+  const pick = bar.querySelector('input[data-role="colorpick"]');
+  if (pick) pick.value = color;
+}
+function bindLayerProps() {
+  const bar = $("layerProps");
+  bar.addEventListener("input", (e) => {
+    const l = findLayer(selLayerId); if (!l) return;
+    const role = e.target.dataset.role;
+    if (role === "fontsize") { l.fontSize = parseFloat(e.target.value) || 64; updateLayerBody(l); }
+    else if (role === "opacity") { l.opacity = parseFloat(e.target.value); updateLayerBody(l); }
+    else if (role === "colorpick") { l.color = e.target.value; updateLayerBody(l); markLayerSwatch(l.color); }
+  });
+  bar.addEventListener("change", (e) => {
+    const l = findLayer(selLayerId); if (!l) return;
+    const role = e.target.dataset.role;
+    if (role === "font") { l.fontId = e.target.value; updateLayerBody(l); saveState(); }
+    else if (role === "stroke") { l.stroke = e.target.checked; updateLayerBody(l); saveState(); }
+    else if (role === "italic") { l.italic = e.target.checked; updateLayerBody(l); saveState(); }
+    else if (role === "fontsize" || role === "opacity") saveState();
+  });
+  bar.addEventListener("click", (e) => {
+    const l = findLayer(selLayerId); if (!l) return;
+    const sw = e.target.closest(".swatch");
+    if (sw) { l.color = sw.dataset.color; updateLayerBody(l); markLayerSwatch(l.color); saveState(); return; }
+    const btn = e.target.closest("[data-role]");
+    if (!btn) return;
+    const role = btn.dataset.role;
+    if (role === "del") deleteLayer(l.id);
+    else if (role === "front") bringLayer(l.id, 1);
+    else if (role === "back") bringLayer(l.id, -1);
+  });
+}
+
+// 顯示/隱藏圖層工具列（A/B 版皆顯示）；不在圖層版型時清除選取
+function updateLayerToolbar() {
+  const tb = $("layerToolbar");
+  if (!tb) return;
+  const on = LAYER_TEMPLATES.includes(state.template);
+  tb.hidden = !on;   // A/B 版都有預設排版，按鈕隨工具列一起顯示
+  if (!on && selLayerId != null) { selLayerId = null; renderLayers(); }
+}
+
+// ===== 版型預設排版（套用後生成可自由編輯的文字圖層）=====
+// 位置以卡片座標 px（寬 1080、高 chh）給定，對齊各版型固定裝飾（B版徽章）。
+// A版：比賽名稱（置中金色襯線）＋名次＋得獎人（左下），對齊原本 A版排版與底部柔光。
+function classicPreset(chh) {
+  // 對齊原本 A版：金色襯線、金深描邊；名次為斜體（gold-deep 描邊色 #B0801F）
+  const gold = "#E7C56B", goldDeep = "#B0801F";
+  return [
+    { type: "text", text: "經典賽",     x: 410, y: 34,        fontId: "serif", fontSize: 78, color: gold, stroke: true, strokeColor: goldDeep, strokeWidth: 2 },
+    { type: "text", text: "1st Place",  x: 52,  y: chh - 280, fontId: "serif", fontSize: 58, color: gold, italic: true, stroke: true, strokeColor: goldDeep, strokeWidth: 2 },
+    { type: "text", text: "陀螺毀滅者", x: 52,  y: chh - 200, fontId: "serif", fontSize: 88, color: gold, stroke: true, strokeColor: goldDeep, strokeWidth: 2 },
+  ];
+}
+function champPreset(chh) {
+  return [
+    { type: "text", text: "經典賽",     x: 52, y: 46,        fontId: "anton", fontSize: 78, color: "#E7C56B" },
+    { type: "text", text: "2026/07/05", x: 56, y: 172,       fontId: "anton", fontSize: 34, color: "#FFFFFF" },
+    { type: "text", text: "冠軍",       x: 56, y: 236,       fontId: "serif", fontSize: 76, color: "#E7C56B", stroke: true, strokeColor: "#B0801F", strokeWidth: 2 },
+    { type: "text", text: "會場名稱",   x: 52, y: chh - 118, fontId: "serif", fontSize: 48, color: "#FFFFFF" },
+  ];
+}
+// 依版型取得預設排版 specs
+function presetFor(template, chh) {
+  return template === "champion" ? champPreset(chh) : classicPreset(chh);
+}
+// 套用預設排版：把目前版型的預設文字圖層灌入目前卡片（有圖層先確認是否清掉）
+function applyPreset() {
+  if (!LAYER_TEMPLATES.includes(state.template)) return;
+  if (curLayers().length && !confirm("要清掉目前的圖層並套用預設排版嗎？")) return;
+  const chh = (SIZES[state.size] || SIZES.square).h;
+  const specs = presetFor(state.template, chh);
+  setCurLayers(specs.map((s, i) => normalizeLayer({ ...s, z: i + 1 })));
+  selLayerId = null;
+  renderLayers();
+  saveState();
+}
+
+// 切換版型：先存起目前版型的圖層，再載入新版型「上一次」的圖層（各版型各自記錄，互不干擾）
+function switchTemplate(newT) {
+  const c = cards[active];
+  if (!c || !TEMPLATES.includes(newT) || newT === state.template) return;
+  if (!c.layersByTemplate || typeof c.layersByTemplate !== "object") c.layersByTemplate = {};
+  c.layersByTemplate[state.template] = curLayers();                 // 收好舊版型
+  const next = Array.isArray(c.layersByTemplate[newT]) ? c.layersByTemplate[newT] : [];
+  c.layersByTemplate[newT] = next;
+  c.layers = next;                                                  // 載入新版型
+  state.template = newT;
+  c.template = newT;
+  if ($("templateSelect")) $("templateSelect").value = newT;        // 自成一體：不依賴呼叫端已更新下拉（saveState 會讀它）
+  selLayerId = null;
+  applyTemplate();
+  applyChampText();
+  renderLayers();
+  fitStage();
+  saveState();
+}
+
+// 圖層互動：拖曳定位 + 角落控制點縮放 + 頂端控制點旋轉 + 雙指 pinch(縮放/旋轉) + 滾輪縮放
+function enableLayerDrag() {
+  const host = $("layerHost");
+  if (!host) return;
+  const pts = new Map();
+  let target = null, dragEl = null, mode = null, moved = false;   // dragEl：本次互動的圖層元素（避免每次 move 重查 DOM）
+  let sx = 0, sy = 0, ox = 0, oy = 0, scr = 1;              // drag 基準
+  let cx = 0, cy = 0, startDist = 0, startScale = 1, startAngle = 0, startRot = 0;   // handle 基準
+  let pinchDist = 0, pinchAngle = 0, pinchScale = 1, pinchRot = 0;                    // pinch 基準
+  let saveT = null;
+  const scheduleSave = () => { clearTimeout(saveT); saveT = setTimeout(saveState, 300); };
+  const elOf = (id) => host.querySelector(`.layer[data-id="${id}"]`);
+  const centerOf = (id) => { const r = elOf(id).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+
+  host.addEventListener("pointerdown", (e) => {
+    const layerEl = e.target.closest(".layer");
+    if (!layerEl) return;
+    e.stopPropagation();   // 交由圖層自己處理，避免冒泡到 card 的「點空白取消選取」
+    const id = layerEl.dataset.id;
+    const body = layerEl.querySelector(".layer-text-body");
+    if (body && body.isContentEditable) return;   // 編輯中 → 交給原生游標
+    const l = findLayer(id);
+    if (!l) return;
+    if (id !== selLayerId) selectLayer(id);        // 先選取（重繪出控制點）
+    e.preventDefault();
+    const el = elOf(id);
+    dragEl = el;                                   // 快取本次互動元素（拖曳期間不會重繪）
+    try { el.setPointerCapture(e.pointerId); } catch {}
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    target = findLayer(id);
+
+    const handle = e.target.closest(".layer-handle");
+    if (handle) {
+      const role = handle.dataset.role;
+      if (role === "del") { deleteLayer(id); target = null; return; }
+      const c = centerOf(id); cx = c.x; cy = c.y;
+      if (role === "scale") { mode = "scale"; startDist = Math.hypot(e.clientX - cx, e.clientY - cy) || 1; startScale = target.scale || 1; }
+      else if (role === "rotate") { mode = "rotate"; startAngle = Math.atan2(e.clientY - cy, e.clientX - cx); startRot = target.rotation || 0; }
+      return;
+    }
+    if (pts.size >= 2) {
+      mode = "pinch";
+      const [a, b] = [...pts.values()];
+      pinchDist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      pinchAngle = Math.atan2(b.y - a.y, b.x - a.x);
+      pinchScale = target.scale || 1; pinchRot = target.rotation || 0;
+    } else {
+      mode = "drag"; moved = false;
+      sx = e.clientX; sy = e.clientY; ox = target.x || 0; oy = target.y || 0; scr = stageScale();
+    }
+  });
+
+  host.addEventListener("pointermove", (e) => {
+    if (!target || !pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const el = dragEl;
+    if (!el) return;
+    if (mode === "drag") {
+      const dx = (e.clientX - sx) / scr, dy = (e.clientY - sy) / scr;
+      if (Math.abs(dx) + Math.abs(dy) > 2) moved = true;
+      // 錨點夾在卡片內（卡片 overflow:hidden，避免圖層被拖出畫面外而找不回）
+      const chh = (SIZES[state.size] || SIZES.square).h;
+      target.x = Math.min(1080, Math.max(0, ox + dx));
+      target.y = Math.min(chh, Math.max(0, oy + dy));
+      el.style.transform = layerTransform(target);
+    } else if (mode === "scale") {
+      const d = Math.hypot(e.clientX - cx, e.clientY - cy) || 1;
+      target.scale = clampLayerScale(startScale * (d / startDist));
+      el.style.transform = layerTransform(target); updateHandleScale(el, target.scale);
+    } else if (mode === "rotate") {
+      const a = Math.atan2(e.clientY - cy, e.clientX - cx);
+      target.rotation = startRot + (a - startAngle) * 180 / Math.PI;
+      el.style.transform = layerTransform(target);
+    } else if (mode === "pinch" && pts.size >= 2) {
+      const [a, b] = [...pts.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      const ang = Math.atan2(b.y - a.y, b.x - a.x);
+      target.scale = clampLayerScale(pinchScale * (d / pinchDist));
+      target.rotation = pinchRot + (ang - pinchAngle) * 180 / Math.PI;
+      el.style.transform = layerTransform(target); updateHandleScale(el, target.scale);
+    }
+  });
+
+  const end = (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.delete(e.pointerId);
+    if (pts.size === 0) { if (mode) saveState(); mode = null; target = null; dragEl = null; }
+    else if (pts.size === 1 && mode === "pinch" && target) {   // 雙指退回單指：重設拖曳基準續拖
+      const p = [...pts.values()][0];
+      mode = "drag"; moved = false;
+      sx = p.x; sy = p.y; ox = target.x || 0; oy = target.y || 0; scr = stageScale();
+    }
+  };
+  host.addEventListener("pointerup", end);
+  host.addEventListener("pointercancel", end);
+
+  // 桌機滾輪縮放（游標在圖層上）
+  host.addEventListener("wheel", (e) => {
+    const layerEl = e.target.closest(".layer");
+    if (!layerEl) return;
+    const l = findLayer(layerEl.dataset.id);
+    if (!l) return;
+    e.preventDefault();
+    l.scale = clampLayerScale((l.scale || 1) * (e.deltaY < 0 ? 1.06 : 1 / 1.06));
+    if (l.id !== selLayerId) { selectLayer(l.id); }
+    else { const el = elOf(l.id); if (el) { el.style.transform = layerTransform(l); updateHandleScale(el, l.scale); } }
+    scheduleSave();
+  }, { passive: false });
+
+  // 雙擊文字圖層 → 進入就地編輯
+  host.addEventListener("dblclick", (e) => {
+    const layerEl = e.target.closest(".layer-text");
+    if (!layerEl) return;
+    const l = findLayer(layerEl.dataset.id);
+    if (!l) return;
+    if (l.id !== selLayerId) selectLayer(l.id);
+    const body = $("layerHost").querySelector(`.layer[data-id="${l.id}"] .layer-text-body`);
+    if (body) startTextEdit(body, l);
+  });
 }
 
 // ===== 初始化 =====
@@ -1402,6 +2010,7 @@ function init() {
   bindEvents();
   enableDrops();
   enablePersonDrag();
+  enableLayerDrag();
   if (!restoreState()) {            // 沒有暫存 → 開一張空白卡
     cards = [blankCard()];
     active = 0;
@@ -1420,7 +2029,7 @@ function showFileProtocolBanner() {
   const bar = document.createElement("div");
   bar.id = "fileBanner";
   bar.className = "file-banner";
-  bar.innerHTML = "⚠ 目前以 file:// 開啟：可編輯與預覽，但<strong>下載 PNG 需改用本機伺服器</strong>　" +
+  bar.innerHTML = "⚠ 目前以 file:// 開啟：可編輯與預覽，但<strong>下載圖片需改用本機伺服器</strong>　" +
     "（在專案資料夾執行 <code>node serve.js</code> → 開 <code>http://localhost:8080</code>）";
   document.body.insertBefore(bar, document.body.firstChild);
 }

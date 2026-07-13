@@ -57,6 +57,10 @@
   - 強調動作（複製 Prompt、套用）= `btn btn-outline-primary` / `btn btn-primary`。
 - **卡片**：人物照置左（寬 50%、`object-fit: cover`、疊在面板之上）；右側 3×3 零件面板；標題置中於上；名次＋得獎人名稱置左下。
 - 卡片整體背景與右側面板背景皆可上傳（未上傳則用預設漸層）。
+- **版型**：目前兩種 —— **A版（classic）** 與 **B版（champion）**，皆為「底層裝飾＋自由圖層」。（C版已移除。）左側面板都精簡為【版型＋圖片＋陀螺】；`#textGroup`、`.tpl-b/.tpl-bc` 一律隱藏。
+- **自由圖層（A/B 版皆可）**：`#layerHost`（`z-index:50`，`pointer-events:none`，子項 `.layer` 為 `auto`）疊在卡片最上層。可新增文字/圖片圖層，直接拖曳、縮放、旋轉；選取後顯示 `.layer-ui`（虛線外框＋旋轉/縮放/刪除控制點，`--accent`／`--accent-2` 配色）。文字圖層支援顏色/字型/字級/白色描邊（`-webkit-text-stroke`）。座標以卡片 1080×H px 儲存（與人像拖曳同一套），匯出時 `.layer-ui` 由 `filter` 濾除。**圖層依版型各自記錄**：存於 `card.layersByTemplate[template]`，`card.layers` 為作用中版型的鏡射；`switchTemplate()` 切換時互換各自的圖層（A版排版不會帶到 B版）。`blankCard()` 預設在 classic 槽帶入 A版預設排版。
+- **各版型的底層裝飾**：A版隱藏固定文字（`.title/.rank`），保留左下柔光 `.rank-scrim` 與零件面板；B版隱藏 `.champ-title/.champ-date/.champ-venue`（冠軍徽章已移除），文字全部改由自由圖層編輯。
+- **預設排版**：「✨ 套用預設排版」（`applyPreset()` → `presetFor()` → `classicPreset()`／`champPreset()`）依目前版型灌入預設文字圖層並對齊該版型裝飾；A版預設＝經典賽／1st Place／陀螺毀滅者。
 
 ---
 

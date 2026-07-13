@@ -18,7 +18,7 @@
     <!-- 左：控制面板 -->
     <section class="controls" id="controls">
       <button type="button" class="btn btn-sm btn-outline-secondary drawer-close" id="btnDrawerClose">完成 ✕</button>
-      <button class="btn btn-warning btn-download" id="btnDownload">輸出 PNG</button>
+      <button class="btn btn-warning btn-download" id="btnDownload">輸出 JPG</button>
 
       <details class="group" open>
         <summary>版型</summary>
@@ -26,7 +26,6 @@
           <select id="templateSelect" class="form-select">
             <option value="classic">A版</option>
             <option value="champion">B版</option>
-            <option value="c">C版</option>
           </select>
         </label>
         <div id="champFields">
@@ -85,7 +84,7 @@
         </div>
       </details>
 
-      <details class="group">
+      <details class="group" id="textGroup">
         <summary>名次與文字</summary>
         <label>匯出尺寸
           <select id="sizeSelect" class="form-select">
@@ -188,11 +187,10 @@
             </div>
           </div>
 
-          <!-- 冠軍榜版型：左上角標題 / 日期 / 冠軍頭銜徽章（僅 champion 版型顯示） -->
+          <!-- 冠軍榜版型：左上角標題 / 日期（僅 champion 版型；文字改由自由圖層編輯，這裡保留節點供相容）-->
           <div class="champ-topleft" aria-hidden="true">
             <div class="champ-title" id="champTitle"></div>
             <div class="champ-date" id="champDate"></div>
-            <div class="champ-badge"><span id="champBadgeText">冠軍</span></div>
           </div>
           <!-- 冠軍榜版型：底部會場名稱 -->
           <div class="champ-venue" id="champVenue" aria-hidden="true"></div>
@@ -211,7 +209,21 @@
             <div class="panel-bg" id="panelBg"></div>
             <div class="rows" id="rows"></div>
           </div>
+
+          <!-- 自由圖層層（B/C 版）：使用者自行新增的文字／圖片，可拖曳、縮放、旋轉 -->
+          <div class="layer-host" id="layerHost"></div>
         </div>
+      </div>
+
+      <!-- 自由圖層浮動工具列（僅 B/C 版顯示；由 app.js 控制 hidden） -->
+      <div class="layer-toolbar" id="layerToolbar" hidden>
+        <div class="lt-add">
+          <button type="button" class="btn btn-sm btn-primary" id="btnAddText">＋ 文字</button>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="btnAddImage">＋ 圖片</button>
+          <button type="button" class="btn btn-sm btn-outline-warning" id="btnApplyPreset">✨ 套用預設排版</button>
+          <input type="file" id="layerImgFile" accept="image/*" hidden />
+        </div>
+        <div class="lt-props" id="layerProps" hidden></div>
       </div>
     </section>
   </main>
@@ -241,6 +253,16 @@
         </div>
         <div class="modal-body changelog-body">
           <ul class="changelog-list">
+          <li class="changelog-item">
+            <span class="changelog-date">2026 / 07 / 13</span>
+            <ul class="changelog-points">
+              <li><strong>A版與B版都可用「自由圖層」</strong>（類 IG 限時動態）：可自行新增<strong>文字</strong>與<strong>圖片</strong>，直接在卡片上<strong>拖曳定位、縮放、旋轉</strong>。</li>
+              <li>文字圖層可雙擊就地編輯，並自訂<strong>顏色、字型、大小、斜體、描邊</strong>；圖片圖層可調整<strong>透明度</strong>；每個圖層可上／下移層與刪除。桌機滾輪縮放、手機雙指縮放/旋轉。</li>
+              <li><strong>A版與B版</strong>左側面板都精簡為【版型＋圖片＋陀螺】，文字改由畫布直接編輯；按<strong>「✨ 套用預設排版」</strong>一鍵帶入該版型預設文字（A版：經典賽／1st Place／陀螺毀滅者；B版：標題／日期／<strong>冠軍</strong>／會場）再自由調整。</li>
+              <li><strong>A/B 版的圖層各自記錄</strong>：切換版型時會分別保留上一次的排版，A版的排版不會跑到 B版。</li>
+              <li>A版保留底部柔光與陀螺面板當底層裝飾；<strong>移除 C版與 B版冠軍徽章</strong>，文字一律改由自由圖層編輯。</li>
+            </ul>
+          </li>
           <li class="changelog-item">
             <span class="changelog-date">2026 / 07 / 11</span>
             <ul class="changelog-points">
@@ -280,7 +302,7 @@
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <div class="mobile-bar" id="mobileBar">
     <button type="button" class="btn btn-primary mbar-edit" id="btnDrawer">✎ 編輯設定</button>
-    <button type="button" class="btn btn-warning mbar-export" id="btnExportMobile">⬇ 輸出 PNG</button>
+    <button type="button" class="btn btn-warning mbar-export" id="btnExportMobile">⬇ 輸出 JPG</button>
   </div>
 
   <!-- 離線優先：先載本機版，失敗才退回 CDN -->

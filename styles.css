@@ -567,35 +567,6 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 }
 .champ-date:empty { display: none; }
 
-/* 冠軍頭銜徽章：深色斜面銘牌 + 金色厚重襯線字 + 兩側月桂葉 */
-.champ-badge {
-  position: relative; margin-top: 4px;
-  display: inline-flex; align-items: center; justify-content: center;
-  min-height: 108px; padding: 6px 76px;
-  background: linear-gradient(180deg, #14335f 0%, #0c1f3d 100%);
-  border: 2px solid rgba(231,197,107,.55);
-  border-radius: 8px;
-  box-shadow: 0 10px 26px rgba(0,0,0,.55), inset 0 0 18px rgba(0,0,0,.5);
-  clip-path: polygon(6% 0, 94% 0, 100% 50%, 94% 100%, 6% 100%, 0 50%);
-}
-.champ-badge span {
-  font-family: var(--font-badge, "Noto Serif TC", "Songti TC", "PMingLiU", serif);
-  font-weight: 900; font-size: 78px; letter-spacing: 8px; line-height: 1;
-  color: var(--gold);
-  -webkit-text-stroke: 1px var(--gold-deep); paint-order: stroke fill;
-  text-shadow: 0 3px 0 rgba(80,52,8,.5), 0 8px 20px rgba(0,0,0,.6);
-}
-.champ-badge span:empty { padding: 0 8px; }
-/* 兩側月桂枝（內含金色葉片的 inline SVG；右側水平鏡像）*/
-.champ-badge::before, .champ-badge::after {
-  content: ""; position: absolute; top: 50%; width: 46px; height: 92px;
-  transform: translateY(-50%);
-  background: center / contain no-repeat
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 100'><path d='M42 96 C24 80 18 44 34 8' fill='none' stroke='%23E7C56B' stroke-width='3' stroke-linecap='round'/><g fill='%23E7C56B'><ellipse cx='24' cy='78' rx='9' ry='4' transform='rotate(38 24 78)'/><ellipse cx='19' cy='64' rx='9.5' ry='4' transform='rotate(28 19 64)'/><ellipse cx='17' cy='50' rx='10' ry='4' transform='rotate(16 17 50)'/><ellipse cx='19' cy='36' rx='9.5' ry='4' transform='rotate(4 19 36)'/><ellipse cx='25' cy='22' rx='9' ry='4' transform='rotate(-8 25 22)'/><ellipse cx='33' cy='11' rx='7' ry='3.4' transform='rotate(-20 33 11)'/></g></svg>");
-}
-.champ-badge::before { left: 10px; }
-.champ-badge::after { right: 10px; transform: translateY(-50%) scaleX(-1); }
-
 /* 底部會場名稱 */
 .champ-venue {
   position: absolute; left: 50px; bottom: 46px; z-index: 5;
@@ -629,60 +600,20 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 }
 .card[data-template="champion"] .bey-name::before { display: none; }
 
-/* 左側控制：版型專屬欄位，依目前版型顯示。
-   .tpl-b = 僅 B版（日期/冠軍頭銜）；.tpl-bc = B版+C版共用（標題大小色/會場）。 */
+/* B版改用自由圖層：固定文字（標題/日期/會場）與冠軍徽章皆已移除，文字全部改由自由圖層編輯。 */
+.card[data-template="champion"] .champ-title,
+.card[data-template="champion"] .champ-date,
+.card[data-template="champion"] .champ-venue { display: none; }
+
+/* 左側控制：A/B 版都改用「自由圖層」編輯文字，故文字設定欄位一律隱藏，
+   左側只留【版型＋圖片＋陀螺】。 */
 .tpl-b, .tpl-bc { display: none; }
-body[data-template="champion"] .tpl-b,
-body[data-template="champion"] .tpl-bc,
-body[data-template="c"] .tpl-bc { display: block; }
+#textGroup { display: none; }
 
-/* ===== C版（data-template="c"）：HANIK TRACK 風 =====
-   沿用 A版 的 title / rank / panel / bey-row 結構，只重新定位與配色。 */
-/* 顯示會場（C版底部右下）；經典版的置中分隔線在 C版隱藏 */
-.card[data-template="c"] .champ-venue { display: block; }
-.card[data-template="c"] .title-divider { display: none; }
-
-/* 左上角比賽標題（紅字，靠左）*/
-.card[data-template="c"] .title {
-  top: 30px; left: 46px; right: auto; align-items: flex-start;
-}
-.card[data-template="c"] .title-text {
-  font-size: calc(46px * var(--title-scale, 1));
-  color: var(--title-color, #E10600);
-  letter-spacing: 1px; -webkit-text-stroke: 0;
-  text-shadow: 0 2px 8px rgba(0,0,0,.65);
-}
-
-/* 左下巨大名次（白描邊，兩行；沿用名次顏色，建議選紅色）*/
-.card[data-template="c"] .rank { left: 40px; bottom: 42px; max-width: 62%; }
-.card[data-template="c"] .rank-place {
-  font-family: var(--font-rank, "Anton", "Arial Black", sans-serif);
-  font-size: 150px; font-weight: 900; font-style: normal;
-  text-transform: uppercase; line-height: .82; letter-spacing: 2px;
-  color: var(--rank-color, #E10600);
-  -webkit-text-stroke: 4px #fff; paint-order: stroke fill;
-  text-shadow: 0 6px 18px rgba(0,0,0,.6);
-}
-.card[data-template="c"] .rank-name { display: none; }   /* C版不顯示得獎人名稱 */
-
-/* 右側面板：沿用 A版 3 列（零件上、名稱下），名稱置中並加 ◇ 菱形括號 */
-.card[data-template="c"] .bey-name {
-  justify-content: center; text-align: center;
-  color: #fff; font-size: 32px; gap: 12px; padding-right: 0;
-}
-.card[data-template="c"] .bey-name::before,
-.card[data-template="c"] .bey-name::after {
-  content: "◇"; border: none; width: auto; height: auto; border-radius: 0;
-  color: #E10600; font-size: 20px; font-weight: 700;
-}
-.card[data-template="c"] .bey-name:empty::before,
-.card[data-template="c"] .bey-name:empty::after { display: none; }
-
-/* 右下會場名稱（紅字）*/
-.card[data-template="c"] .champ-venue {
-  left: auto; right: 46px; bottom: 30px; text-align: right; max-width: 54%;
-  color: #E10600; font-weight: 900; font-size: 44px;
-}
+/* A版改用自由圖層：隱藏固定的比賽名稱/名次/得獎人（改由預設圖層編輯），
+   保留左下柔光底(.rank-scrim)與右側零件面板當底層。 */
+.card[data-template="classic"] .title,
+.card[data-template="classic"] .rank { display: none; }
 
 /* ===== 頁尾（學術研究聲明 + 更新紀錄入口） ===== */
 .site-footer {
@@ -780,3 +711,98 @@ textarea.contact-input { resize: vertical; min-height: 90px; }
 .contact-btn-send:hover { background: #69b4ff; }
 .contact-btn-send:disabled { opacity: .6; cursor: default; }
 
+/* App 內建瀏覽器（LINE/FB/IG）存圖覆蓋層：無法直接下載時，讓使用者長按存圖 */
+.save-overlay {
+  position: fixed; inset: 0; z-index: 1200;
+  display: flex; align-items: center; justify-content: center;
+  padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+  background: rgba(0,0,0,.82); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.save-sheet {
+  width: min(460px, 100%); max-height: 92vh; overflow: auto; text-align: center;
+  background: #161f30; border: 1px solid #2c3a54; border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.6); color: #e8eef7; padding: 16px;
+}
+.save-tip { margin: 0 0 12px; font-size: 15px; font-weight: 700; color: #ffd479; }
+.save-img {
+  width: 100%; height: auto; border-radius: 10px; display: block;
+  -webkit-touch-callout: default; /* 確保 iOS 可長按叫出「儲存圖片」 */
+}
+.save-hint { margin: 12px 0 14px; font-size: 12.5px; line-height: 1.5; color: #9fb0c8; }
+.save-close { width: 100%; }
+
+
+/* ===== 自由圖層（B/C 版：類 IG 限動可自由新增文字/圖片）=====
+   圖層層疊在卡片最上方；A版(classic)完全不顯示，保持純淨。
+   .layer-ui（外框/控制點）僅為編輯輔助，匯出時由 app.js filter 過濾。 */
+.layer-host {
+  position: absolute; inset: 0; z-index: 50;
+  pointer-events: none;               /* 空白處事件穿透給底下人像/零件 */
+  overflow: visible;
+}
+
+.layer {
+  position: absolute; top: 0; left: 0;
+  transform-origin: center center;
+  pointer-events: auto;               /* 圖層本身可被點/拖 */
+  cursor: grab;
+  user-select: none; -webkit-user-select: none;
+  touch-action: none;                 /* 觸控自行處理拖曳/縮放 */
+}
+.layer.selected { cursor: grab; }
+.layer-text-body {
+  white-space: pre;                   /* 保留使用者換行、不自動折行 */
+  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  font-weight: 800; line-height: 1.15; padding: 4px 8px;
+  text-shadow: 0 2px 8px rgba(0,0,0,.55), 0 0 2px rgba(0,0,0,.4);
+}
+.layer-text-body.editing {
+  outline: 2px solid var(--accent); border-radius: 4px;
+  cursor: text; user-select: text; -webkit-user-select: text; white-space: pre-wrap;
+}
+.layer-img-body { display: block; height: auto; pointer-events: none; -webkit-user-drag: none; }
+
+/* 選取外框 + 控制點 */
+.layer-ui { position: absolute; inset: 0; pointer-events: none; }
+.layer-frame {
+  position: absolute; inset: -4px;
+  border: 2px dashed var(--accent); border-radius: 5px;
+}
+.layer-handle {
+  position: absolute; width: 30px; height: 30px; padding: 0;
+  border-radius: 50%; border: 2px solid #fff;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; line-height: 1; cursor: pointer;
+  pointer-events: auto; box-shadow: 0 2px 8px rgba(0,0,0,.5);
+}
+.layer-rotate { top: -48px; left: 50%; margin-left: -15px; cursor: grab; background: var(--accent-2); }
+.layer-rotate::before { content: "⟳"; font-size: 17px; }
+.layer-scale  { bottom: -15px; right: -15px; cursor: nwse-resize; }
+.layer-scale::before { content: "⤢"; font-size: 16px; }
+.layer-del    { top: -15px; right: -15px; background: #e0344b; }
+
+/* 圖層浮動工具列（B/C 版）：新增鈕 + 選取後屬性列 */
+.layer-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin: 0 0 10px; padding: 10px 12px;
+  background: var(--panel-bg); border: 1px solid var(--line); border-radius: 12px;
+}
+.layer-toolbar[hidden] { display: none; }
+.lt-add { display: flex; gap: 8px; }
+.lt-props { display: flex; flex-direction: column; gap: 8px; flex: 1 1 260px; min-width: 220px; }
+.lt-props[hidden] { display: none; }
+.lt-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.lt-swatches { display: flex; align-items: center; gap: 6px; }
+.lt-swatches .swatch {
+  width: 24px; height: 24px; border-radius: 50%; border: 2px solid #2a3550;
+  background: var(--sw); cursor: pointer; padding: 0;
+}
+.lt-swatches .swatch.active { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
+.lt-swatches .color-pick { width: 30px; height: 26px; padding: 0; border: none; background: none; cursor: pointer; }
+.lt-font { max-width: 180px; }
+.lt-size { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); flex: 1 1 160px; }
+.lt-size .form-range { flex: 1; }
+.lt-check { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.lt-check input { width: 15px; height: 15px; }
+.lt-btns { display: flex; gap: 6px; margin-left: auto; }
