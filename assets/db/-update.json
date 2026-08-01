@@ -1,42 +1,60 @@
 {
-  "part-bit":          "2026/07/01 13:55:00",
-  "part-blade":        "2026/07/08 20:15:00",
-  "part-blade-divided":"2026/07/10 12:15:00",
-  "prod-beys":         "2026/07/10 12:15:00",
-  "part-blade-collab": "2026/07/08 20:15:00",
-  "part-ratchet":      "2026/07/01 13:42:00",
-  "prod-keihin":       "2026/06/16 12:35:00",
-  "meta":              "2026/05/18 17:10:00",
-  "prod-gear":         "2026/06/17 00:10:00",
+  "part-bit":          "2026/07/23 17:15:00",
+  "part-blade-divided":"2026/07/18 14:00:00",
+  "prod-beys":         "2026/07/30 22:47:00",
+  "prod-keihin":       "2026/07/18 18:00:00",
+  "part-blade":        "2026/07/26 12:04:00",
+  "part-blade-collab": "2026/07/10 23:55:00",
+  "part-ratchet":      "2026/07/10 23:55:00",
+  "meta":              "2026/07/23 18:15:00",
+  "prod-gear":         "2026/07/16 13:14:00",
   "news": {
-    "2026-07-09":[{
-      "code":"BXH-23 booster","name":["ドレイクブレイブG4-70I","Drake Brave G4-70I"],"type":"att",
-      "desc":["APP新抽獎獎品","無論免費的換領券或付費的購買券都可能抽到此","〔Gravity〕Assist Blade：兩側有金屬"]
-    },{
-      "code":"BXG-79 booster","name":["Hornet Fort R7-60T"],"type":"bal",
-      "desc":["三款都是APP抽獎購買品（非組合）","Hasbro中已推出無塗裝版"]
-    },{
-      "code":"BXG-80 booster","name":["Kraken Wriggle S3-70O"], "type":"sta"
-    },{
-      "code":"BXG-81 booster","name":["Buck's Antlers B2-60D"],"type":"def"
-    }],
-    "2026-07-11":[{
-      "code":"UX-20 starter","name":["グローリーワルキューレLF","Glory Valkyrie LF"],"type":"att",
-      "desc":["與2017年陀螺【God Valkyrie】有相同的回彈彈簧機關"],
-      "imgs":["https://m.media-amazon.com/images/I/61UYOrroRUL._AC_SX679_.jpg","https://m.media-amazon.com/images/I/61tFSxORikL._AC_SX679_.jpg","https://m.media-amazon.com/images/I/51Zr8ZPcipL._AC_SX679_.jpg","https://m.media-amazon.com/images/I/619mdYUcGRL._AC_SX679_.jpg","https://m.media-amazon.com/images/I/610N33F61QL._AC_SX679_.jpg","https://m.media-amazon.com/images/S/aplus-media-library-service-media/1ad9aa00-baa8-47a9-a06e-d37977d1e09e.__CR0,0,970,600_PT0_SX970_V1___.jpg","https://m.media-amazon.com/images/S/aplus-media-library-service-media/eceab1f5-582f-4e3b-981b-957b43a6820b.__CR0,0,970,600_PT0_SX970_V1___.jpg","https://m.media-amazon.com/images/I/41UDAd1D4GL.__AC_SR150,300___.jpg","https://m.media-amazon.com/images/I/41L28AsE3WL.__AC_SR150,300___.jpg","https://m.media-amazon.com/images/I/41TeU7%2BCqpL.__AC_SR150,300___.jpg","https://m.media-amazon.com/images/I/51hSPVS%2B0ZL.__AC_SR150,300___.jpg","https://m.media-amazon.com/images/I/51OSQ28nFZL.__AC_SR150,300___.jpg","https://m.media-amazon.com/images/I/51l6Lty6l1L.__AC_SR150,300___.jpg"]
-      },{
-      "code":"BX-50 random booster","name":["ヘブンズリング0-80DS","Heaven's Ring 0-80DS"],"type":"def",
-      "desc":["〔Disk Spike〕Bit：前所未有最薄的血環、最低爆裂抵抗！（20）"],
-      "imgs":["https://m.media-amazon.com/images/I/61cP5emKf-L._AC_SX679_.jpg","https://m.media-amazon.com/images/I/61Qv3Qm5zgL._AC_SX679_.jpg","https://m.media-amazon.com/images/I/61wpU1rBc1L._AC_SX679_.jpg","https://m.media-amazon.com/images/S/aplus-media-library-service-media/336282aa-48e7-4e0a-9849-094031811f7d.__CR0,0,970,600_PT0_SX970_V1___.jpg","https://m.media-amazon.com/images/S/aplus-media-library-service-media/4f838919-4589-4e3b-a54a-4d3997bdbb72.__CR0,0,970,600_PT0_SX970_V1___.jpg","https://m.media-amazon.com/images/S/aplus-media-library-service-media/9e04cc4d-f4c8-472d-a73b-a19b785dc110.__CR0,0,970,600_PT0_SX970_V1___.jpg"]
-      },{
-      "code":"BXG-47 starter","bey":"SPg 3-70 RA"
-    }],
-    "2026-08":[
-      {
-      "code":"UX-21 deck set"
-    }
-  ],
+    "2026-08-08":[
+ {
+    "code": "UX-21 deck set","type":"bal",
+    "name": [
+        "ヘルズネザーデッキセット",
+        "Hells Nether Deck Set"
+    ],
+    "desc": [
+        "〔Hells Nether〕：金屬刃能調節至不同高度，選擇以刃上方攻擊或中間化解",
+        "UX飛龍首次常規商品中收錄 8-80B"
+    ],
+    "imgs": ["https://m.media-amazon.com/images/I/712PbSkR+lL._AC_SX679_.jpg","https://m.media-amazon.com/images/I/717rp02z9bL._AC_SX679_.jpg","https://m.media-amazon.com/images/I/61X0TFrGjhL._AC_SX679_.jpg","https://m.media-amazon.com/images/S/aplus-media-library-service-media/8bb5afef-f93c-45bd-a5e7-0d96089ea356.__CR0,0,970,600_PT0_SX970_V1___.jpg","https://m.media-amazon.com/images/S/aplus-media-library-service-media/e7be1608-4ff8-41b2-b87f-bdff0907e0c9.__CR0,0,970,600_PT0_SX970_V1___.jpg","https://m.media-amazon.com/images/S/aplus-media-library-service-media/3b63036f-6d93-43fa-89d8-cb494569b769.__CR0,0,970,600_PT0_SX970_V1___.jpg"]
+},{
+    "code": "BXG-49 booster",
+    "bey": "DrSw2 3-60 F",
+    "desc": [
+        "新版本重量提升3g"
+    ]
+},{
+    "code": "BX-57",
+    "name": [
+        "3on3デッキケース ブラックVer.",
+        "3on3 Deck Case Black Ver."
+    ]
+} ],
+"2026-08-12":[{
+    "code": "BXC-??",
+    "bey": "ClMr 4-55 S","ver":[
+        "メタルコート：ブラック","Metal Coat: Black"
+    ],
+    "desc": [
+        "填寫雜誌內表格購買"
+    ],
+    "imgs": [
+        "https://corocoro-news.jp/wp-content/uploads/2026/07/8dff3a12f1d5cf75a5aa1bdb414d404f.jpg"
+    ]
+}],
     "2026-08-29":[{
+    "code": "BXG-63 starter",
+    "bey": "GlVl = LF",
+    "desc": [
+        "G1等場合發售"
+    ],
+    "imgs": [
+    ]
+},{
       "code":"BXG-57 deck set","name":["エヴァンゲリオンデッキセット","Evangelion Deck Set"],
       "desc":["以初号機、零号機、２号機作image設計"]
     }],
@@ -52,5 +70,23 @@
     ]
 },{
       "code":"CX-19 random booster select"
-    }]  }
-}
+    }],"2026-10":[{
+    "code":"BX-52 starter"
+},{
+    "code":"BX-53 entry set"
+},{
+    "code":"BX-56 string launcher L"
+}],"2026-11":[{
+    "code":"BX-54 booster"
+},{
+    "code":"CX-20 customize set"
+}],"2026-12":[{
+    "code":"UX-22 starter"
+},{
+    "code":"BX-55 random booster"
+}],"2027-01":[{
+    "code":"UX-23 booster"
+}],"2027-02":[{
+    "code":"CX-21 random booster"
+}]
+}}

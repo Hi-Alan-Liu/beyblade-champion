@@ -34,7 +34,7 @@
     "assist": {
         "G": {
             "names": {"jap":"グラビティ", "eng":"Gravity"},
-            "stat": [],
+            "stat": ["12-",140],
             "desc": "在兩處厚重凸出的重量級金屬組件大幅強化撞擊性能。",
             "attr": ["att","right"]
         },
@@ -419,7 +419,7 @@
         },
         "Hr": {
             "names": {"jap":"ハリケーン", "eng":"Hurricane"},
-            "stat": [""],
+            "stat": ["24+"],
             "desc": "(IS7-55T tent.)",
             "attr": ["bal","right","expand"],
             "from": "metal."
@@ -440,7 +440,7 @@
         },
         "I": {
             "names": {"jap":"", "eng":""},
-            "stat": [""],
+            "stat": ["4-"],
             "desc": "",
             "attr": ["bal","right","expand"],
             "from": "over."

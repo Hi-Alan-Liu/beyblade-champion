@@ -1,12 +1,23 @@
 {
+    "HlNt": {
+        "group": "UX",
+        "names": {
+            "jap": "ヘルズネザー",
+            "eng": "HellsNether",
+            "hasbro": "Nether Incendio",
+            "chi": "煉獄下界"
+        },
+        "stat": ["42+"],
+        "desc": "利用可切替Blade高度的機關，能分別使用強撞擊攻擊刃及化解刃，特化於向各種高度對手的對應力。",
+        "attr": ["bal","right","UX","fused"]
+    },
     "HvRn": {
         "group": "BX",
         "names": {
             "jap": "ヘブンズリング",
             "eng": "HeavensRing",
             "hasbro": "Ring Aether",
-            "chi": "",
-            "aka": "天使 光環"
+            "chi": "蒼穹圓環 天國日輪"
         },
         "stat": ["37+"],
         "desc": "金屬連接至中央能提高剛性；框架構造的圓形十二枚刃把衝擊高效率分散，持續抵耐。",
@@ -18,7 +29,7 @@
             "jap": "グローリーワルキューレ",
             "eng": "Glory\\Valkyrie",
             "hasbro": "Glory Valkerion",
-            "chi": ""
+            "chi": "榮耀\\戰神"
         },
         "stat": ["43+"],
         "desc": "內藏彈簧的可動刃攻擊時回彈，以反發力特化於強烈的撞擊性能。",
@@ -457,6 +468,17 @@
         "desc": "三攻Upper刃擅於把對手向斜上方撞飛。",
         "attr": ["att","right"]
     },
+    "DrSw2": {
+        "group": "BX",
+        "names": {
+            "jap": "ドランソード_バージョン2.0",
+            "eng": "DranSword_Version 2.0",
+            "chi": "翔龍神劍_V2 蒼龍神劍_V2"
+        },
+        "stat": ["37+"],
+        "desc": "三攻Upper刃擅於把對手向斜上方撞飛。性能有所更新的V2 Model。",
+        "attr": ["att","right"]
+    },
     "HlCh": {
         "group": "BX",
         "names": {
@@ -703,11 +725,10 @@
         "names": {
             "jap": "ワイバーンホバー",
             "eng": "WyvernHover",
-            "chi": "",
-            "aka": "飛龍 翼龍"
+            "chi": "飛龍翱翔"
         },
         "stat": ["35+"],
-        "desc": "向下收窄的階梯構造，不論對手的形狀都擅於抵擋攻擊並從上方壓制。",
+        "desc": "向下收窄的階梯形狀兩枚刃把對手攻擊由上向下壓制，擅於分散衝擊。",
         "attr": ["def","right"]
     }
 }
