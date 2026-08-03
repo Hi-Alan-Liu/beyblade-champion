@@ -600,6 +600,22 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 }
 .card[data-template="champion"] .bey-name::before { display: none; }
 
+/* B版兩件式收合：解除具名區塊，退回自動欄流，讓兩件比照 A版往中央靠攏
+   （.bey-row-collapsed 由 layoutRow 於 visible===2 時標記；欄數由 JS 設為 repeat(2,1fr)）
+   名稱鎖在上列(grid-row:1)、零件鎖在下列(grid-row:2)，避免解除 areas 後名稱掉到下方。 */
+.card[data-template="champion"] .bey-row.bey-row-collapsed {
+  grid-template-areas: none;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.card[data-template="champion"] .bey-row-collapsed .bey-name {
+  grid-area: auto; grid-column: 1 / -1; grid-row: 1;
+}
+.card[data-template="champion"] .bey-row-collapsed .part-blade,
+.card[data-template="champion"] .bey-row-collapsed .part-ratchet,
+.card[data-template="champion"] .bey-row-collapsed .part-bit {
+  grid-area: auto; grid-row: 2;
+}
+
 /* B版改用自由圖層：固定文字（標題/日期/會場）與冠軍徽章皆已移除，文字全部改由自由圖層編輯。 */
 .card[data-template="champion"] .champ-title,
 .card[data-template="champion"] .champ-date,
@@ -806,3 +822,34 @@ textarea.contact-input { resize: vertical; min-height: 90px; }
 .lt-check { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--muted); white-space: nowrap; }
 .lt-check input { width: 15px; height: 15px; }
 .lt-btns { display: flex; gap: 6px; margin-left: auto; }
+
+/* ===== 匯出進度條（產生 JPG 時顯示；固定於底部置中）===== */
+.export-progress {
+  position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 0);
+  z-index: 3000; display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-radius: 999px;
+  background: rgba(14, 20, 34, .94); color: #fff;
+  box-shadow: 0 8px 28px rgba(0,0,0,.45); border: 1px solid rgba(231,197,107,.35);
+  font-size: 13px; font-weight: 700; max-width: min(88vw, 420px);
+  opacity: 1; transition: opacity .35s, transform .35s;
+}
+.export-progress.hidden { opacity: 0; transform: translate(-50%, 12px); pointer-events: none; }
+.export-progress .ep-label { white-space: nowrap; }
+.export-progress .ep-track {
+  position: relative; flex: 1 1 140px; min-width: 120px; height: 8px;
+  background: rgba(255,255,255,.14); border-radius: 999px; overflow: hidden;
+}
+.export-progress .ep-bar {
+  position: absolute; inset: 0 auto 0 0; width: 0%;
+  background: linear-gradient(90deg, var(--gold, #e7c56b), #ffd97a);
+  border-radius: 999px; transition: width .12s linear;
+}
+.export-progress .ep-pct { min-width: 34px; text-align: right; color: var(--gold, #e7c56b); }
+.export-progress.done { border-color: rgba(55,208,106,.6); }
+.export-progress.done .ep-bar { background: linear-gradient(90deg, #37d06a, #6ee29a); }
+.export-progress.done .ep-pct { color: #6ee29a; }
+.export-progress.error { border-color: rgba(225,6,0,.6); }
+.export-progress.error .ep-pct { color: #ff6b66; }
+@media (prefers-reduced-motion: reduce) {
+  .export-progress .ep-bar { transition: none; }
+}

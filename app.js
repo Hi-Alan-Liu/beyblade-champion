@@ -788,8 +788,12 @@ function layoutRow(i) {
     if (first) first.classList.add("cl-first");
     if (last) last.classList.add("cl-last");
   }
-  // 冠軍榜版型用 grid-template-areas 排版，不套用經典版的收合欄寬（避免破版）
-  row.style.gridTemplateColumns = (state.template === "champion") ? "" : (collapse ? `repeat(${visible.length}, 1fr)` : "");
+  // 收合成兩件時，A/B 版都縮欄 + 標記 .bey-row-collapsed（B版藉此解除具名區塊，退回自動欄流靠攏）
+  const collapsed2 = collapse && visible.length === 2;
+  row.classList.toggle("bey-row-collapsed", collapsed2);
+  row.style.gridTemplateColumns = collapsed2
+    ? `repeat(${visible.length}, 1fr)`
+    : (state.template === "champion" ? "" : (collapse ? `repeat(${visible.length}, 1fr)` : ""));
 }
 
 function imgSrc(i, part) {
@@ -1393,16 +1397,35 @@ function fitStage() {
 }
 
 // ===== 下載 JPG =====
-async function exportCurrentDataURL() {
+// 匯出耗時大宗是「把 CJK 網頁字型(Noto/思源/楷體…)嵌成 base64」＋「重抓所有圖片」。
+// 字型不會在執行期改變 → 只算一次並快取，之後每次匯出直接沿用，省下最貴的一步。
+let _fontEmbedCSS = null;   // string=已快取；null=尚未算/算失敗（失敗則讓 toJpeg 自行內嵌，慢但正確）
+let lastExportMs = 0;       // 上次匯出實測耗時，用來校準進度條速度（代表處理速度）
+async function fontEmbedCSSCached() {
+  if (typeof _fontEmbedCSS === "string") return _fontEmbedCSS;
+  try { _fontEmbedCSS = await window.htmlToImage.getFontEmbedCSS(card); }
+  catch (e) { _fontEmbedCSS = null; }
+  return _fontEmbedCSS;
+}
+// 載入後閒置時先暖機把字型 CSS 算好，讓「第一次匯出」也快
+function warmExport() {
+  const ric = window.requestIdleCallback || ((f) => setTimeout(f, 1200));
+  ric(() => { if (window.htmlToImage && document.fonts && document.fonts.ready) document.fonts.ready.then(() => fontEmbedCSSCached()).catch(() => {}); });
+}
+
+async function exportCurrentDataURL(onProgress) {
   const cardH = (SIZES[state.size] || SIZES.square).h;
   // 先等字型下載完再擷取：避免剛載入就按匯出，抓到還沒替換的備援字型
   if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (e) {} }
+  onProgress && onProgress(0.12);
+  const fontEmbedCSS = await fontEmbedCSSCached();     // 快取命中→瞬間；未命中→算一次
+  onProgress && onProgress(0.25);
   // 卡片是滿版不透明漸層 → 用高品質 JPEG，檔案約為 PNG 的 1/20（5MB→~270KB），畫質肉眼無差
-  return window.htmlToImage.toJpeg(card, {
+  const opts = {
     pixelRatio: 2,               // 2x 高解析度
     quality: 0.92,               // 高品質（漸層背景無明顯色帶）
     width: 1080, height: cardH,
-    cacheBust: true,
+    // cacheBust 已移除：圖片同源、無畫布污染風險，可沿用瀏覽器快取，免去每次重抓
     backgroundColor: "#0e1422",  // JPEG 無透明通道；給卡片底色當 fallback（實際被滿版漸層蓋住）
     // 匯出時略過：①無來源的空 img（src 會解析成頁面網址→載入失敗→reject）②編輯用的虛線提示框 .ph
     filter: (node) => {
@@ -1415,8 +1438,54 @@ async function exportCurrentDataURL() {
       }
       return true;
     },
-  });
+  };
+  if (fontEmbedCSS != null) opts.fontEmbedCSS = fontEmbedCSS;   // null→交給 toJpeg 自行內嵌（保正確字型）
+  return window.htmlToImage.toJpeg(card, opts);
 }
+
+// 匯出進度條：toJpeg 無進度事件，故以「實測耗時估算」平滑推進到 90%，完成再補到 100%，
+// 並在 fonts.ready / 字型嵌入 等真實檢查點打點。上次耗時越短→這次填得越快（代表處理速度）。
+const exportProgress = (() => {
+  let el, bar, label, raf, cur = 0;
+  function ensure() {
+    if (el) return;
+    el = document.createElement("div");
+    el.className = "export-progress hidden";
+    el.innerHTML = '<span class="ep-label">產生圖片中…</span><span class="ep-track"><span class="ep-bar"></span></span><span class="ep-pct">0%</span>';
+    document.body.appendChild(el);
+    bar = el.querySelector(".ep-bar"); label = el.querySelector(".ep-label");
+  }
+  function render() {
+    if (!bar) return;
+    bar.style.width = (cur * 100).toFixed(1) + "%";
+    el.querySelector(".ep-pct").textContent = Math.round(cur * 100) + "%";
+  }
+  function start(estMs) {
+    ensure(); cancelAnimationFrame(raf);
+    cur = 0; el.classList.remove("hidden", "done", "error");
+    label.textContent = "產生圖片中…"; render();
+    const t0 = performance.now(), cap = 0.9, est = Math.max(300, estMs || 1600);
+    const tick = () => {
+      const p = Math.min(1, (performance.now() - t0) / est);
+      cur = Math.max(cur, cap * (1 - Math.pow(1 - p, 2)));   // ease-out 趨近 90%
+      render();
+      if (cur < cap - 0.005) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+  }
+  function set(v) { ensure(); cur = Math.max(cur, v); render(); }
+  function finish() {
+    ensure(); cancelAnimationFrame(raf); cur = 1; render();
+    label.textContent = "完成 ✓"; el.classList.add("done");
+    setTimeout(() => el && el.classList.add("hidden"), 900);
+  }
+  function fail() {
+    ensure(); cancelAnimationFrame(raf);
+    label.textContent = "產生失敗"; el.classList.add("error");
+    setTimeout(() => el && el.classList.add("hidden"), 1600);
+  }
+  return { start, set, finish, fail };
+})();
 // LINE / FB / IG 等 App 內建瀏覽器（WebView）：對 <a download> + data: URL 支援極差，
 // 直接下載幾乎無效。用 UA 粗略判斷，改走「系統分享」或「長按存圖」路徑。
 function isInAppBrowser() {
@@ -1505,12 +1574,18 @@ async function downloadCard() {
   const btn = $("btnDownload");
   btn.disabled = true; const oldText = btn.textContent; btn.textContent = "產生中…";
   deselectLayer();   // 匯出前取消圖層選取，避免外框/控制點入圖
+  exportProgress.start(lastExportMs);   // 用上次實測耗時估算填充速度
+  const t0 = performance.now();
   try {
     if (!window.htmlToImage) throw new Error("html-to-image 未載入");
     cards[active] = { ...cards[active], ...readCardFromDOM() };
-    const url = await exportCurrentDataURL();
+    const url = await exportCurrentDataURL((p) => exportProgress.set(p));
+    lastExportMs = performance.now() - t0;   // 記錄本次耗時，校準下次進度條
+    exportProgress.set(0.92);
     await triggerDownload(url, cardFilename(cards[active], active));
+    exportProgress.finish();
   } catch (err) {
+    exportProgress.fail();
     alert("產生圖片失敗：" + err.message + "\n（請確認 vendor/html-to-image.js 存在或網路可載入）");
     console.error(err);
   } finally { btn.disabled = false; btn.textContent = oldText; }
@@ -2020,6 +2095,7 @@ function init() {
   fitStage();
   window.addEventListener("resize", fitStage);
   showFileProtocolBanner();
+  warmExport();   // 閒置時預先算好字型嵌入 CSS，讓第一次匯出也快
 }
 
 // file:// 開啟時提示：可編輯預覽，但匯出需改用 http
