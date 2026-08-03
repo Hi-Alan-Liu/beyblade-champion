@@ -150,8 +150,6 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   --bs-btn-hover-bg: var(--accent); --bs-btn-hover-border-color: var(--accent);
   --bs-btn-active-bg: var(--accent); --bs-btn-active-border-color: var(--accent);
 }
-/* 複製成功時的視覺提示（橘色）*/
-.btn-ai-prompt.copied { --bs-btn-color: var(--accent-2); --bs-btn-border-color: var(--accent-2); }
 .btn-warning {
   --bs-btn-bg: var(--accent-2); --bs-btn-border-color: var(--accent-2);
   --bs-btn-hover-bg: #ff8243; --bs-btn-hover-border-color: #ff8243;

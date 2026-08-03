@@ -39,33 +39,6 @@ const FONT_FIELDS = [
 function fontStack(id) { const f = FONTS.find((x) => x.id === id); return f ? f.stack : ""; }
 function fontDefaults() { const o = {}; FONT_FIELDS.forEach((f) => (o[f.key] = "")); return o; }
 
-// ===== 人物去背 AI Prompt（供「複製 AI 去背 Prompt」按鈕使用）=====
-const AI_PERSON_PROMPT =
-`請幫我將這張人物照片「只做去背」，處理成可放進「戰鬥陀螺排名卡片」的人物素材：
-1. 只移除背景、保留人物主體，輸出為背景全透明的 PNG。
-2. ⚠ 人物本身必須保持原樣：不要美顏、磨皮、瘦臉、調色、補光、銳化、重繪或任何 AI 優化；五官、膚色、體型、服裝、光影與細節都要與原圖完全一致，只能更改背景。
-3. 保留完整人物，頭頂、手部與腳部都不要被裁切。
-4. 邊緣乾淨自然、髮絲俐落，不留任何原背景殘影或陰影。
-5. 不要替換成其他背景，背景必須是全透明。
-6. 人物會放在卡片左側的人物區、疊在深色卡片背景上，請以直立站姿、置中、底部對齊輸出。
-7. 輸出尺寸建議為直式人像，比例約 2:3 ～ 9:16（例如 1080×1620 px 或 1080×1920 px），人物置中、底部對齊並保留少許上方留白。`;
-
-// 複製文字到剪貼簿：先試 Clipboard API，失敗則退回 execCommand（兼容無焦點/權限受限環境）
-async function copyText(text) {
-  if (navigator.clipboard && window.isSecureContext) {
-    try { await navigator.clipboard.writeText(text); return; } catch (e) { /* 退回 execCommand */ }
-  }
-  const ta = document.createElement("textarea");
-  ta.value = text;
-  ta.style.position = "fixed"; ta.style.top = "-9999px"; ta.style.opacity = "0";
-  document.body.appendChild(ta);
-  ta.focus(); ta.select();
-  let ok = false;
-  try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
-  document.body.removeChild(ta);
-  if (!ok) throw new Error("copy failed");
-}
-
 // ===== 匯出尺寸（寬固定 1080）=====
 const SIZES = {
   ig:     { h: 1350, label: "IG 4:5" },
@@ -215,8 +188,11 @@ function openGallery(bey, part) {
   // 系統別分頁：只有上蓋需要（固鎖/軸心跨系統共用，平鋪即可）
   const tabsEl = $("galTabs");
   if (part === "blade") {
-    // 一般系統(BX/UX/其他) + CX 拆解（CX 走子部件組裝流程）
-    const systems = [...BeyDB.systems("blade"), "CX"];
+    // 分頁順序：BX → UX → CX → 其他（CX 走子部件組裝流程，插在「其他」之前）
+    const base = BeyDB.systems("blade").filter((s) => s !== "CX");
+    const tail = base.filter((s) => s === "other");           // 「其他」永遠殿後
+    const head = base.filter((s) => s !== "other");           // BX / UX …
+    const systems = [...head, "CX", ...tail];
     galTarget.system = systems[0] || null;
     const label = (s) => (s === "other" ? "其他" : s);
     tabsEl.innerHTML = systems.map((s) => `<button type="button" class="gtab" data-sys="${s}">${label(s)}</button>`).join("");
@@ -276,7 +252,8 @@ function renderGalleryGrid() {
   $("galSearch").style.display = "";
   const q = $("galSearch").value;
   let items = BeyDB.search(galTarget.part, q);
-  if (galTarget.part === "blade" && galTarget.system) {
+  // 有輸入搜尋字 → 無視分類(BX/UX/CX/其他)跨全部搜尋；沒搜尋字才依目前分頁過濾
+  if (galTarget.part === "blade" && galTarget.system && !q.trim()) {
     items = items.filter((e) => e.system === galTarget.system);
   }
   // 固鎖/軸心：提供原生上拉選單（與搜尋/縮圖並存）；上蓋走視覺挑選不用下拉
@@ -1353,18 +1330,6 @@ function bindEvents() {
   $("drawerBackdrop").addEventListener("click", () => setDrawer(false));
   $("btnExportMobile").addEventListener("click", () => $("btnDownload").click());
 
-  // 複製人物去背 AI Prompt
-  $("btnCopyPrompt").addEventListener("click", async () => {
-    const btn = $("btnCopyPrompt");
-    const old = btn.textContent;
-    try {
-      await copyText(AI_PERSON_PROMPT);
-      btn.textContent = "✓ 已複製到剪貼簿"; btn.classList.add("copied");
-    } catch (e) {
-      btn.textContent = "✕ 複製失敗，請手動選取"; console.error(e);
-    }
-    setTimeout(() => { btn.textContent = old; btn.classList.remove("copied"); }, 1800);
-  });
   $("btnDuplicate").addEventListener("click", duplicateCard);
   $("btnReset").addEventListener("click", () => {
     if (confirm("確定清空全部卡片並清除暫存？")) { clearState(); location.reload(); }
