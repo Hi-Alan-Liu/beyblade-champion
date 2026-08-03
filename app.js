@@ -1443,25 +1443,42 @@ async function exportCurrentDataURL(onProgress) {
   return window.htmlToImage.toJpeg(card, opts);
 }
 
-// 匯出進度條：toJpeg 無進度事件，故以「實測耗時估算」平滑推進到 90%，完成再補到 100%，
-// 並在 fonts.ready / 字型嵌入 等真實檢查點打點。上次耗時越短→這次填得越快（代表處理速度）。
+// 匯出進度：置中「阻擋式」遮罩（防呆）——產生圖片期間蓋住整個畫面、擋掉所有編輯操作，
+// 只留「取消」可中止（避免卡在產生圖片中）。toJpeg 無進度事件，故以「實測耗時估算」平滑
+// 推進到 90%，完成再補到 100%，並在 fonts.ready / 字型嵌入 等真實檢查點打點。
 const exportProgress = (() => {
-  let el, bar, label, raf, cur = 0;
+  let el, bar, label, pct, cancelBtn, raf, cur = 0, onCancel = null;
   function ensure() {
     if (el) return;
     el = document.createElement("div");
-    el.className = "export-progress hidden";
-    el.innerHTML = '<span class="ep-label">產生圖片中…</span><span class="ep-track"><span class="ep-bar"></span></span><span class="ep-pct">0%</span>';
+    el.className = "export-progress hidden";   // position:fixed 全螢幕遮罩（見 styles.css）
+    el.innerHTML =
+      '<div class="ep-box" role="alertdialog" aria-live="assertive" aria-label="產生圖片中">' +
+        '<span class="ep-label">產生圖片中…</span>' +
+        '<span class="ep-track"><span class="ep-bar"></span></span>' +
+        '<span class="ep-pct">0%</span>' +
+        '<button type="button" class="ep-cancel btn btn-outline-light btn-sm">取消</button>' +
+      '</div>';
     document.body.appendChild(el);
     bar = el.querySelector(".ep-bar"); label = el.querySelector(".ep-label");
+    pct = el.querySelector(".ep-pct"); cancelBtn = el.querySelector(".ep-cancel");
+    // 只有「取消」能中止；點背景不關閉（防呆，避免誤觸中斷）
+    cancelBtn.addEventListener("click", () => { if (onCancel) onCancel(); });
+    // Esc 也可取消
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && el && !el.classList.contains("hidden") && onCancel) onCancel();
+    });
   }
   function render() {
     if (!bar) return;
     bar.style.width = (cur * 100).toFixed(1) + "%";
-    el.querySelector(".ep-pct").textContent = Math.round(cur * 100) + "%";
+    pct.textContent = Math.round(cur * 100) + "%";
   }
-  function start(estMs) {
+  function hide() { if (el) el.classList.add("hidden"); }
+  function start(estMs, cancelFn) {
     ensure(); cancelAnimationFrame(raf);
+    onCancel = cancelFn || null;
+    cancelBtn.style.display = onCancel ? "" : "none";
     cur = 0; el.classList.remove("hidden", "done", "error");
     label.textContent = "產生圖片中…"; render();
     const t0 = performance.now(), cap = 0.9, est = Math.max(300, estMs || 1600);
@@ -1475,16 +1492,24 @@ const exportProgress = (() => {
   }
   function set(v) { ensure(); cur = Math.max(cur, v); render(); }
   function finish() {
-    ensure(); cancelAnimationFrame(raf); cur = 1; render();
+    ensure(); cancelAnimationFrame(raf); onCancel = null; cur = 1; render();
     label.textContent = "完成 ✓"; el.classList.add("done");
-    setTimeout(() => el && el.classList.add("hidden"), 900);
+    cancelBtn.style.display = "none";
+    setTimeout(hide, 800);
   }
-  function fail() {
-    ensure(); cancelAnimationFrame(raf);
-    label.textContent = "產生失敗"; el.classList.add("error");
-    setTimeout(() => el && el.classList.add("hidden"), 1600);
+  function fail(msg) {
+    ensure(); cancelAnimationFrame(raf); onCancel = null;
+    label.textContent = msg || "產生失敗"; el.classList.add("error");
+    cancelBtn.style.display = "none";
+    setTimeout(hide, 1600);
   }
-  return { start, set, finish, fail };
+  function cancelled() {
+    ensure(); cancelAnimationFrame(raf); onCancel = null;
+    label.textContent = "已取消"; el.classList.add("error");
+    cancelBtn.style.display = "none";
+    setTimeout(hide, 600);
+  }
+  return { start, set, finish, fail, cancelled };
 })();
 // LINE / FB / IG 等 App 內建瀏覽器（WebView）：對 <a download> + data: URL 支援極差，
 // 直接下載幾乎無效。用 UA 粗略判斷，改走「系統分享」或「長按存圖」路徑。
@@ -1569,26 +1594,39 @@ function exportNeedsHttp() {
   return false;
 }
 
+let exportToken = 0;   // 每次匯出遞增；取消/重按會 bump，讓舊的匯出結果作廢
 async function downloadCard() {
   if (exportNeedsHttp()) return;
   const btn = $("btnDownload");
-  btn.disabled = true; const oldText = btn.textContent; btn.textContent = "產生中…";
+  const oldText = btn.textContent;
+  const restore = () => { btn.disabled = false; btn.textContent = oldText; };
+  const myToken = ++exportToken;
+  const stale = () => myToken !== exportToken;   // 被取消或被新的匯出取代
+  // 取消：作廢本次結果、還原按鈕、關遮罩。html-to-image 無法真正中止，但畫面立即恢復可用（防呆）
+  const cancel = () => { if (stale()) return; exportToken++; restore(); exportProgress.cancelled(); };
+
+  btn.disabled = true; btn.textContent = "產生中…";
   deselectLayer();   // 匯出前取消圖層選取，避免外框/控制點入圖
-  exportProgress.start(lastExportMs);   // 用上次實測耗時估算填充速度
+  exportProgress.start(lastExportMs, cancel);   // 置中阻擋式遮罩 + 取消；用上次耗時估算填充速度
   const t0 = performance.now();
   try {
     if (!window.htmlToImage) throw new Error("html-to-image 未載入");
     cards[active] = { ...cards[active], ...readCardFromDOM() };
-    const url = await exportCurrentDataURL((p) => exportProgress.set(p));
-    lastExportMs = performance.now() - t0;   // 記錄本次耗時，校準下次進度條
+    const url = await exportCurrentDataURL((p) => { if (!stale()) exportProgress.set(p); });
+    if (stale()) return;                         // 已取消 → 丟棄結果，不下載
+    lastExportMs = performance.now() - t0;        // 記錄本次耗時，校準下次進度條
     exportProgress.set(0.92);
     await triggerDownload(url, cardFilename(cards[active], active));
+    if (stale()) return;
     exportProgress.finish();
+    restore();
   } catch (err) {
-    exportProgress.fail();
+    if (stale()) return;                          // 取消後才拋錯 → 忽略
+    exportProgress.fail("產生失敗");
     alert("產生圖片失敗：" + err.message + "\n（請確認 vendor/html-to-image.js 存在或網路可載入）");
     console.error(err);
-  } finally { btn.disabled = false; btn.textContent = oldText; }
+    restore();
+  }
 }
 
 // ============================================================================
