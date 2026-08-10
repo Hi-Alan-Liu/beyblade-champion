@@ -642,8 +642,33 @@ function markSwatch(containerId, color) {
 // ===== 圖片上傳：File -> 自動縮放/壓縮 -> dataURL =====
 const MAX_EDGE = 1400;   // 長邊上限（卡片 2x 匯出綽綽有餘）
 
-// 把過大的圖縮到合理尺寸；PNG 保留透明（去背零件用），其餘壓成 JPEG 省空間
-function downscaleImage(dataUrl, maxEdge, mime, cb) {
+// 上傳處理中的 Loading 覆蓋層（大圖解碼/壓縮需時間，避免使用者以為卡住）
+let uploadBusy = 0;
+function showUploadLoading() {
+  uploadBusy++;
+  let ov = document.getElementById("uploadLoading");
+  if (!ov) {
+    ov = document.createElement("div");
+    ov.id = "uploadLoading";
+    ov.className = "upload-loading";
+    ov.innerHTML =
+      '<div class="upload-loading-box">' +
+      '<span class="upload-spinner"></span>' +
+      '<span class="upload-loading-txt">圖片上傳中…</span>' +
+      "</div>";
+    document.body.appendChild(ov);
+  }
+  ov.classList.remove("hidden");
+}
+function hideUploadLoading() {
+  uploadBusy = Math.max(0, uploadBusy - 1);
+  if (uploadBusy > 0) return;
+  const ov = document.getElementById("uploadLoading");
+  if (ov) ov.classList.add("hidden");
+}
+
+// Fallback（無 createImageBitmap 的舊瀏覽器）：FileReader -> Image -> canvas
+function downscaleImageLegacy(dataUrl, maxEdge, mime, cb) {
   const img = new Image();
   img.onload = () => {
     const longEdge = Math.max(img.width, img.height);
@@ -663,10 +688,48 @@ function downscaleImage(dataUrl, maxEdge, mime, cb) {
   img.src = dataUrl;
 }
 
+// 主路徑：createImageBitmap 直接從 File 解碼（在背景執行緒，不卡 UI），
+// 套用 EXIF 方向（修正手機直拍轉向），再用非同步 toBlob 縮放壓縮。
+// PNG 保留透明（去背零件用），其餘壓成 JPEG 省空間。
+function processImageFile(file, maxEdge, cb) {
+  const isPng = (file.type || "").includes("png");
+  const legacy = () => {
+    const reader = new FileReader();
+    reader.onload = (e) => downscaleImageLegacy(e.target.result, maxEdge, file.type, cb);
+    reader.onerror = () => cb("");
+    reader.readAsDataURL(file);
+  };
+  if (!window.createImageBitmap) { legacy(); return; }
+  createImageBitmap(file, { imageOrientation: "from-image" }).then((bmp) => {
+    const longEdge = Math.max(bmp.width, bmp.height);
+    const scale = Math.min(1, maxEdge / longEdge);   // 只縮不放大
+    const cw = Math.max(1, Math.round(bmp.width * scale));
+    const ch = Math.max(1, Math.round(bmp.height * scale));
+    const c = document.createElement("canvas");
+    c.width = cw; c.height = ch;
+    const ctx = c.getContext("2d");
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(bmp, 0, 0, cw, ch);
+    if (bmp.close) bmp.close();
+    const type = isPng ? "image/png" : "image/jpeg";
+    const toUrlSync = () => { try { cb(c.toDataURL(type, 0.85)); } catch { cb(""); } };
+    if (!c.toBlob) { toUrlSync(); return; }
+    c.toBlob((blob) => {
+      if (!blob) { toUrlSync(); return; }
+      const reader = new FileReader();
+      reader.onload = () => cb(reader.result);
+      reader.onerror = () => toUrlSync();
+      reader.readAsDataURL(blob);
+    }, type, 0.85);
+  }).catch(legacy);
+}
+
 function readImage(file, cb) {
-  const reader = new FileReader();
-  reader.onload = (e) => downscaleImage(e.target.result, MAX_EDGE, file.type, cb);
-  reader.readAsDataURL(file);
+  showUploadLoading();
+  processImageFile(file, MAX_EDGE, (url) => {
+    hideUploadLoading();
+    if (url) cb(url);   // url 為空代表解碼失敗，略過不覆蓋既有圖
+  });
 }
 
 function setImg(imgEl, phEl, dataUrl) {
