@@ -1417,7 +1417,11 @@ function fitStage() {
   // 自動扣掉上方頂列/分頁列/間距，避免又矮又寬的視窗把卡片頂出畫面（爆版）
   const top = stage.getBoundingClientRect().top;
   // 頂部固定工具列已反映在 stage 的 top 內，不需再額外扣除其高度
-  const availH = Math.max(220, window.innerHeight - top - 20);
+  // 但下方「＋文字／＋圖片」圖層工具列在卡片之後，需預留其高度，
+  // 否則卡片會填滿整個視窗高、把按鈕擠到畫面外要往下滑才看得到。
+  const tb = $("layerToolbar");
+  const tbH = tb && !tb.hidden ? tb.getBoundingClientRect().height + 12 /* .preview gap */ : 0;
+  const availH = Math.max(220, window.innerHeight - top - 20 - tbH);
   const scale = Math.min(availW / 1080, availH / cardH, 1);
   stage.style.transform = `scale(${scale})`;
   stage.style.width = `${1080 * scale}px`;
@@ -1967,6 +1971,7 @@ function updateLayerToolbar() {
   const on = LAYER_TEMPLATES.includes(state.template);
   tb.hidden = !on;   // A/B 版都有預設排版，按鈕隨工具列一起顯示
   if (!on && selLayerId != null) { selLayerId = null; renderLayers(); }
+  fitStage();        // 工具列顯示/隱藏會改變下方預留高度 → 重新縮放卡片，確保按鈕不被擠出畫面
 }
 
 // ===== 版型預設排版（套用後生成可自由編輯的文字圖層）=====
@@ -2163,6 +2168,12 @@ function init() {
   }
   fitStage();
   window.addEventListener("resize", fitStage);
+  // 圖層工具列高度變化（選取圖層展開屬性列、換行…）時重新縮放卡片，
+  // 讓「＋文字／＋圖片」等按鈕永遠留在可視範圍、不必往下滑。
+  if (window.ResizeObserver) {
+    const tb = $("layerToolbar");
+    if (tb) new ResizeObserver(() => fitStage()).observe(tb);
+  }
   showFileProtocolBanner();
   warmExport();   // 閒置時預先算好字型嵌入 CSS，讓第一次匯出也快
 }
