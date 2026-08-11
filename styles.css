@@ -746,6 +746,19 @@ textarea.contact-input { resize: vertical; min-height: 90px; }
 }
 .upload-loading-txt { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: .5px; }
 @keyframes uploadSpin { to { transform: rotate(360deg); } }
+/* 上傳進度條：軌道 + 填充；填充帶流動光條，解碼階段寬度暫停時也不會看起來卡住 */
+.upload-progress {
+  width: 200px; max-width: 60vw; height: 8px; border-radius: 999px;
+  background: rgba(255,255,255,.14); overflow: hidden;
+}
+.upload-progress-bar {
+  width: 8%; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent, #E7C56B), #fff6d8);
+  background-size: 200% 100%;
+  transition: width .25s ease;
+  animation: uploadBarShine 1.1s linear infinite;
+}
+@keyframes uploadBarShine { to { background-position: -200% 0; } }
 
 /* App 內建瀏覽器（LINE/FB/IG）存圖覆蓋層：無法直接下載時，讓使用者長按存圖 */
 .save-overlay {

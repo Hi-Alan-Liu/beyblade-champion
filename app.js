@@ -652,6 +652,7 @@ function markSwatch(containerId, color) {
 const MAX_EDGE = 1400;   // 長邊上限（卡片 2x 匯出綽綽有餘）
 
 // 上傳處理中的 Loading 覆蓋層（大圖解碼/壓縮需時間，避免使用者以為卡住）
+// 含進度條：由 processImageFile 依「讀檔 → 解碼 → 壓縮」各階段回報 0..1。
 let uploadBusy = 0;
 function showUploadLoading() {
   uploadBusy++;
@@ -664,22 +665,33 @@ function showUploadLoading() {
       '<div class="upload-loading-box">' +
       '<span class="upload-spinner"></span>' +
       '<span class="upload-loading-txt">圖片上傳中…</span>' +
+      '<div class="upload-progress"><div class="upload-progress-bar" id="uploadProgressBar"></div></div>' +
       "</div>";
     document.body.appendChild(ov);
   }
   ov.classList.remove("hidden");
+  setUploadProgress(0.08);   // 起始給一點寬度，讓使用者立刻看到進度條在動
+}
+// 更新進度條寬度（p：0..1）；夾在 2%~100% 之間避免看起來完全空白或卡住
+function setUploadProgress(p) {
+  const bar = document.getElementById("uploadProgressBar");
+  if (!bar) return;
+  const pct = Math.max(2, Math.min(100, Math.round((p || 0) * 100)));
+  bar.style.width = pct + "%";
 }
 function hideUploadLoading() {
   uploadBusy = Math.max(0, uploadBusy - 1);
   if (uploadBusy > 0) return;
+  setUploadProgress(1);   // 收尾補滿到 100% 再隱藏
   const ov = document.getElementById("uploadLoading");
   if (ov) ov.classList.add("hidden");
 }
 
 // Fallback（無 createImageBitmap 的舊瀏覽器）：FileReader -> Image -> canvas
-function downscaleImageLegacy(dataUrl, maxEdge, mime, cb) {
+function downscaleImageLegacy(dataUrl, maxEdge, mime, cb, onProgress) {
   const img = new Image();
   img.onload = () => {
+    if (onProgress) onProgress(0.85);          // 解碼完成
     const longEdge = Math.max(img.width, img.height);
     const scale = maxEdge / longEdge;
     if (scale >= 1) { cb(dataUrl); return; }   // 已夠小，原圖返回（不放大）
@@ -688,6 +700,7 @@ function downscaleImageLegacy(dataUrl, maxEdge, mime, cb) {
     const c = document.createElement("canvas");
     c.width = cw; c.height = ch;
     c.getContext("2d").drawImage(img, 0, 0, cw, ch);
+    if (onProgress) onProgress(0.95);          // 壓縮前
     const isPng = (mime || "").includes("png");
     try {
       cb(isPng ? c.toDataURL("image/png") : c.toDataURL("image/jpeg", 0.85));
@@ -700,16 +713,21 @@ function downscaleImageLegacy(dataUrl, maxEdge, mime, cb) {
 // 主路徑：createImageBitmap 直接從 File 解碼（在背景執行緒，不卡 UI），
 // 套用 EXIF 方向（修正手機直拍轉向），再用非同步 toBlob 縮放壓縮。
 // PNG 保留透明（去背零件用），其餘壓成 JPEG 省空間。
-function processImageFile(file, maxEdge, cb) {
+function processImageFile(file, maxEdge, cb, onProgress) {
+  const prog = (p) => { if (onProgress) onProgress(p); };
   const isPng = (file.type || "").includes("png");
   const legacy = () => {
     const reader = new FileReader();
-    reader.onload = (e) => downscaleImageLegacy(e.target.result, maxEdge, file.type, cb);
+    // 讀檔（可算出實際進度）→ 對應 10%~65%
+    reader.onprogress = (ev) => { if (ev.lengthComputable) prog(0.1 + 0.55 * (ev.loaded / ev.total)); };
+    reader.onload = (e) => { prog(0.7); downscaleImageLegacy(e.target.result, maxEdge, file.type, cb, onProgress); };
     reader.onerror = () => cb("");
     reader.readAsDataURL(file);
   };
   if (!window.createImageBitmap) { legacy(); return; }
+  prog(0.15);
   createImageBitmap(file, { imageOrientation: "from-image" }).then((bmp) => {
+    prog(0.55);   // 背景執行緒解碼完成
     const longEdge = Math.max(bmp.width, bmp.height);
     const scale = Math.min(1, maxEdge / longEdge);   // 只縮不放大
     const cw = Math.max(1, Math.round(bmp.width * scale));
@@ -720,13 +738,15 @@ function processImageFile(file, maxEdge, cb) {
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
     ctx.drawImage(bmp, 0, 0, cw, ch);
     if (bmp.close) bmp.close();
+    prog(0.78);   // 縮放繪製完成，開始壓縮
     const type = isPng ? "image/png" : "image/jpeg";
     const toUrlSync = () => { try { cb(c.toDataURL(type, 0.85)); } catch { cb(""); } };
     if (!c.toBlob) { toUrlSync(); return; }
     c.toBlob((blob) => {
       if (!blob) { toUrlSync(); return; }
       const reader = new FileReader();
-      reader.onload = () => cb(reader.result);
+      reader.onprogress = (ev) => { if (ev.lengthComputable) prog(0.82 + 0.18 * (ev.loaded / ev.total)); };
+      reader.onload = () => { prog(1); cb(reader.result); };
       reader.onerror = () => toUrlSync();
       reader.readAsDataURL(blob);
     }, type, 0.85);
@@ -738,7 +758,7 @@ function readImage(file, cb) {
   processImageFile(file, MAX_EDGE, (url) => {
     hideUploadLoading();
     if (url) cb(url);   // url 為空代表解碼失敗，略過不覆蓋既有圖
-  });
+  }, setUploadProgress);
 }
 
 function setImg(imgEl, phEl, dataUrl) {
