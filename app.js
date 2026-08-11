@@ -152,7 +152,7 @@ function createGalleryModal() {
             <input type="file" accept="image/*" id="galUpload" hidden />
           </label>
           <div class="modal-foot-right">
-            <button type="button" class="modal-clear btn btn-sm btn-outline-secondary" id="galClear">清除此格</button>
+            <button type="button" class="modal-clear btn btn-sm btn-outline-light" id="galClear">此格留空/清除</button>
             <button type="button" class="modal-apply btn btn-sm btn-primary" id="galApply" hidden>套用至卡片</button>
           </div>
         </div>
@@ -237,6 +237,15 @@ function closeGallery() {
   if (inst) inst.hide();
 }
 
+// 選完一個部件後自動跳到下一個（上蓋→固鎖→軸心）；最後一個(軸心)則關閉。
+// 直接以下一個部件重開同一個 Modal（不 hide），畫面內容原地切換、無閃爍。
+function advanceOrCloseGallery(bey, part) {
+  const idx = PART_DEFS.findIndex((d) => d.key === part);
+  const next = PART_DEFS[idx + 1];
+  if (next) openGallery(bey, next.key);
+  else closeGallery();
+}
+
 function renderGalleryGrid() {
   const grid = $("galGrid");
   grid.classList.remove("cx-mode");
@@ -284,7 +293,7 @@ function pickGalleryEntry(entry) {
     source: "gallery", key: entry.key, group: entry.system, name, img: entry.img,
     fused: part === "blade" ? !!entry.fused : false,
   });
-  closeGallery();
+  advanceOrCloseGallery(bey, part);
 }
 
 // ===== CX 拆解上蓋組裝器（Modal 內） =====
@@ -357,7 +366,7 @@ function applyCxDraft() {
   setPartData(galTarget.bey, "blade", {
     source: "gallery", cx: true, mode: cxDraft.mode, comps: chosen, name, group: "CX", key: "", img: "",
   });
-  closeGallery();
+  advanceOrCloseGallery(galTarget.bey, "blade");
 }
 
 function onGalleryUpload(e) {
@@ -367,7 +376,7 @@ function onGalleryUpload(e) {
   const prevName = (cards[active] && cards[active].beys[bey] && cards[active].beys[bey][part] && cards[active].beys[bey][part].name) || "";
   readImage(f, (url) => {
     setPartData(bey, part, { source: "upload", key: "", group: "", name: prevName, img: url });
-    closeGallery();
+    advanceOrCloseGallery(bey, part);
   });
   e.target.value = "";
 }
@@ -1110,6 +1119,9 @@ let dragFrom = null;   // 拖曳排序起點
 function renderTabs() {
   const wrap = $("cardTabs");
   wrap.innerHTML = "";
+  // 只保留單張卡片：卡片數 ≤ 1 時整條分頁列隱藏（無切換／新增需求，讓預覽圖上方乾淨）
+  if (cards.length <= 1) { wrap.hidden = true; return; }
+  wrap.hidden = false;
   cards.forEach((c, i) => {
     const tab = document.createElement("div");
     tab.className = "tab" + (i === active ? " active" : "");
@@ -1128,11 +1140,6 @@ function renderTabs() {
     tab.addEventListener("drop", (e) => { e.preventDefault(); reorderCards(dragFrom, i); });
     wrap.appendChild(tab);
   });
-  const add = document.createElement("button");
-  add.className = "tab-add";
-  add.textContent = "＋ 新增卡片";
-  add.addEventListener("click", addCard);
-  wrap.appendChild(add);
 }
 
 function reorderCards(from, to) {
@@ -1393,7 +1400,6 @@ function bindEvents() {
   $("drawerBackdrop").addEventListener("click", () => setDrawer(false));
   $("btnExportMobile").addEventListener("click", () => $("btnDownload").click());
 
-  $("btnDuplicate").addEventListener("click", duplicateCard);
   $("btnReset").addEventListener("click", () => {
     if (confirm("確定清空全部卡片並清除暫存？")) { clearState(); location.reload(); }
   });

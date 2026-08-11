@@ -304,6 +304,7 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
   display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
   width: 100%;
 }
+.card-tabs[hidden] { display: none; }   /* 單張卡片時整條分頁列隱藏 */
 .card-tabs .tab {
   display: inline-flex; align-items: center; gap: 6px;
   background: #0e0e13; border: 1px solid var(--line); border-radius: 8px;
