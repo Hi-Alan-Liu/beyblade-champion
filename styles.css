@@ -249,8 +249,8 @@ details.group > summary ~ *:last-child { margin-bottom: 14px; }
 .modal-select[hidden] { display: none; }
 .modal-hint { margin-bottom: 6px; font-size: 12px; color: var(--accent); }
 .modal-grid {
-  /* auto-fit：填滿格子的欄位撐滿整列、不留右側空縫（避免內容偏左） */
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 14px;
+  /* auto-fill：保留空欄位，項目維持固定大小不放大（結果少於一列欄數時靠左排列，不撐大） */
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 14px;
   align-content: start;
 }
 .modal-empty { color: var(--muted); font-size: 14px; grid-column: 1 / -1; text-align: center; padding: 24px; }

@@ -1579,22 +1579,25 @@ function showLongPressSave(dataUrl) {
 
 async function triggerDownload(dataUrl, filename) {
   const blob = dataUrlToBlob(dataUrl);
-  // 1) 優先用系統分享：in-app 瀏覽器多半可叫出「儲存圖片 / 分享」原生面板
-  try {
-    const file = new File([blob], filename, { type: blob.type });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file] });
-      return;
+  // 1) 只有 in-app 瀏覽器（LINE/FB/IG…）才走系統分享 —— 這些環境 <a download> 幾乎無效，
+  //    需靠原生「儲存圖片 / 分享」面板。一般瀏覽器直接跳到下方正規下載，不再彈出分享提示。
+  if (isInAppBrowser()) {
+    try {
+      const file = new File([blob], filename, { type: blob.type });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+        return;
+      }
+    } catch (e) {
+      // AbortError＝使用者自己取消分享，不用再 fallback；其餘錯誤往下走
+      if (e && e.name === "AbortError") return;
     }
-  } catch (e) {
-    // AbortError＝使用者自己取消分享，不用再 fallback；其餘錯誤往下走
-    if (e && e.name === "AbortError") return;
+    // 2) in-app 瀏覽器且不支援分享：顯示圖片讓使用者長按存檔（<a download> 在此無效）
+    showLongPressSave(dataUrl);
+    return;
   }
 
-  // 2) in-app 瀏覽器且不支援分享：顯示圖片讓使用者長按存檔（<a download> 在此無效）
-  if (isInAppBrowser()) { showLongPressSave(dataUrl); return; }
-
-  // 3) 桌機 / 一般行動瀏覽器：正規下載
+  // 3) 桌機 / 一般行動瀏覽器：正規下載（直接存檔，不跳提示）
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.download = filename; a.href = url;
