@@ -1139,8 +1139,6 @@ let dragFrom = null;   // 拖曳排序起點
 function renderTabs() {
   const wrap = $("cardTabs");
   wrap.innerHTML = "";
-  // 只保留單張卡片：卡片數 ≤ 1 時整條分頁列隱藏（無切換／新增需求，讓預覽圖上方乾淨）
-  if (cards.length <= 1) { wrap.hidden = true; return; }
   wrap.hidden = false;
   cards.forEach((c, i) => {
     const tab = document.createElement("div");
@@ -1160,6 +1158,11 @@ function renderTabs() {
     tab.addEventListener("drop", (e) => { e.preventDefault(); reorderCards(dragFrom, i); });
     wrap.appendChild(tab);
   });
+  const add = document.createElement("button");
+  add.className = "tab-add";
+  add.textContent = "＋ 新增卡片";
+  add.addEventListener("click", addCard);
+  wrap.appendChild(add);
 }
 
 function reorderCards(from, to) {
@@ -1420,6 +1423,7 @@ function bindEvents() {
   $("drawerBackdrop").addEventListener("click", () => setDrawer(false));
   $("btnExportMobile").addEventListener("click", () => $("btnDownload").click());
 
+  $("btnDuplicate").addEventListener("click", duplicateCard);
   $("btnReset").addEventListener("click", () => {
     if (confirm("確定清空全部卡片並清除暫存？")) { clearState(); location.reload(); }
   });
